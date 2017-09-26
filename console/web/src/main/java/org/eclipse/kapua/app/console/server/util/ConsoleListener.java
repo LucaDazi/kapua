@@ -35,6 +35,9 @@ import org.eclipse.kapua.service.scheduler.quartz.SchedulerServiceInit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
+
 public class ConsoleListener implements ServletContextListener {
 
     private static final Logger logger = LoggerFactory.getLogger(ConsoleListener.class);
@@ -72,6 +75,11 @@ public class ConsoleListener implements ServletContextListener {
         }
         logger.info("Starting job scheduler... DONE");
 
+        // start vertx container
+        System.setProperty("vertx.disableFileCPResolving", "true");
+        VertxOptions vertxOpt = new VertxOptions();
+        Vertx vertx = Vertx.vertx(vertxOpt);
+        vertx.deployVerticle("org.eclipse.kapua.service.account.module.AccountServiceModule");
     }
 
     @Override

@@ -132,7 +132,7 @@
         </dependency>
         <dependency>
             <groupId>org.eclipse.kapua</groupId>
-            <artifactId>kapua-account-internal</artifactId>
+            <artifactId>kapua-account-module</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.kapua</groupId>

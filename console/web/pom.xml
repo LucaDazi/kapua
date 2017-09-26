@@ -40,6 +40,13 @@
             <artifactId>kapua-console-core</artifactId>
             <classifier>sources</classifier>
         </dependency>
+
+        <!--Vertx -->
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-core</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
         
         <!-- External dependency -->
         <dependency>
