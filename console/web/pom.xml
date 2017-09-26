@@ -41,6 +41,11 @@
             <classifier>sources</classifier>
         </dependency>
 
+        <dependency>
+            <groupId>org.eclipse.kapua</groupId>
+            <artifactId>kapua-locator-vertx</artifactId>
+        </dependency>
+
         <!--Vertx -->
         <dependency>
             <groupId>io.vertx</groupId>

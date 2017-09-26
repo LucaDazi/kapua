@@ -13,5 +13,24 @@
 	<name>${project.artifactId}</name>
 
 	<dependencies>
+
+        <!-- Internal dependencies -->
+        <dependency>
+            <groupId>org.eclipse.kapua</groupId>
+            <artifactId>kapua-service-api</artifactId>
+        </dependency>
+
+        <!--Vertx -->
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-core</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-service-discovery</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
+	   
 	</dependencies>
 </project>

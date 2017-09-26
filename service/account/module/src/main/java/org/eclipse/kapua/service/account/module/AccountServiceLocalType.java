@@ -18,7 +18,7 @@ import io.vertx.servicediscovery.spi.ServiceType;
 public interface AccountServiceLocalType extends ServiceType {
 
     public static String TYPE = "account-service-local";
-    public static String LOCATION_SERVICE_CLASSNAME = "serviceClass";
+    public static String LOCATION_SERVICE_CLASSNAME = "locationServiceClass";
 
     public static Record createRecord(String kapuaServiceClassName) {
         JsonObject location = new JsonObject().put(LOCATION_SERVICE_CLASSNAME, kapuaServiceClassName);

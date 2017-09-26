@@ -30,6 +30,8 @@ import org.eclipse.kapua.app.console.ConsoleJAXBContextProvider;
 import org.eclipse.kapua.commons.setting.system.SystemSetting;
 import org.eclipse.kapua.commons.util.xml.JAXBContextProvider;
 import org.eclipse.kapua.commons.util.xml.XmlUtil;
+import org.eclipse.kapua.locator.vertx.VertxLocator;
+import org.eclipse.kapua.service.account.AccountService;
 import org.eclipse.kapua.service.liquibase.KapuaLiquibaseClient;
 import org.eclipse.kapua.service.scheduler.quartz.SchedulerServiceInit;
 import org.slf4j.Logger;
@@ -80,6 +82,18 @@ public class ConsoleListener implements ServletContextListener {
         VertxOptions vertxOpt = new VertxOptions();
         Vertx vertx = Vertx.vertx(vertxOpt);
         vertx.deployVerticle("org.eclipse.kapua.service.account.module.AccountServiceModule");
+
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        VertxLocator vertxLocator = new VertxLocator(vertx);
+        System.err.println(">>>>>>> accountServiceRequest....");
+        AccountService accountService = vertxLocator.getService(AccountService.class);
+        System.err.println(">>>>>>> accountService: " + accountService);
     }
 
     @Override

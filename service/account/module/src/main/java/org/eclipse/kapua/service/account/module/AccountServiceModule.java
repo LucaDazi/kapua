@@ -20,6 +20,8 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.servicediscovery.Record;
+import io.vertx.servicediscovery.ServiceDiscovery;
 
 /**
  * 
@@ -29,6 +31,7 @@ public class AccountServiceModule extends AbstractVerticle implements KapuaServi
 
     @Override
     public void start() throws Exception {
+        super.start();
 
         Injector injector = Guice.createInjector( new AbstractModule() {
             @Override
@@ -37,6 +40,18 @@ public class AccountServiceModule extends AbstractVerticle implements KapuaServi
             } 
         });
         AccountServiceLocalTypeImpl.setInjector(injector);
+
+        ServiceDiscovery discovery = ServiceDiscovery.create(vertx);
+        Record serviceRecord = AccountServiceLocalType.createRecord(AccountService.class.getName());
+        discovery.publish(serviceRecord, ar -> {
+            if (ar.succeeded()) {
+                System.out.println("Service alfa successfully published!");
+
+            } else {
+                System.err.println("Service alfa has not been published: something went wrong...");
+
+            }
+        });
     }
 
     @Override
