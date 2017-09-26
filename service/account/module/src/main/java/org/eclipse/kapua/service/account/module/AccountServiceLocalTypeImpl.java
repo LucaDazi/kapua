@@ -28,8 +28,7 @@ public class AccountServiceLocalTypeImpl implements AccountServiceLocalType {
 
     @Override
     public ServiceReference get(Vertx vertx, ServiceDiscovery discovery, Record record, JsonObject configuration) {
-        JsonObject location = record.getLocation();
-        String serviceClassName = location.getString(LOCATION_SERVICE_CLASSNAME);
+        String serviceClassName = record.getName();
         KapuaService kapuaService;
         try {
             kapuaService = (KapuaService) injector.getInstance(Class.forName(serviceClassName));

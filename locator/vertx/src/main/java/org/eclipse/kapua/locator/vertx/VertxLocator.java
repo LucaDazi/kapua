@@ -41,9 +41,8 @@ public class VertxLocator extends KapuaLocator {
         Future<Record> futureRecord = Future.future();
         ServiceDiscovery discovery = ServiceDiscovery.create(vertx);
         discovery.getRecord(r -> {
-            System.err.println("Filtered record location: " + r.getLocation());
-            System.err.println("Filtered record location.locationServiceClass: " + r.getLocation().getString("locationServiceClass"));
-            return serviceClass.getName().equals(r.getLocation().getString("locationServiceClass"));
+            System.err.println("Filtered record name: " + r.getName());
+            return serviceClass.getName().equals(r.getName());
         }, futureRecord);
 
         System.err.println("getService - waiting for complete...");

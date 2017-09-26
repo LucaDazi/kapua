@@ -11,18 +11,15 @@
  *******************************************************************************/
 package org.eclipse.kapua.service.account.module;
 
-import io.vertx.core.json.JsonObject;
 import io.vertx.servicediscovery.Record;
 import io.vertx.servicediscovery.spi.ServiceType;
 
 public interface AccountServiceLocalType extends ServiceType {
 
     public static String TYPE = "account-service-local";
-    public static String LOCATION_SERVICE_CLASSNAME = "locationServiceClass";
 
     public static Record createRecord(String kapuaServiceClassName) {
-        JsonObject location = new JsonObject().put(LOCATION_SERVICE_CLASSNAME, kapuaServiceClassName);
-        Record record = new Record().setName(TYPE).setLocation(location);
+        Record record = new Record().setName(kapuaServiceClassName).setType(TYPE);
         return record;
     }
 }
