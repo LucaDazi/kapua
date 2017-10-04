@@ -11,40 +11,21 @@
  *******************************************************************************/
 package org.eclipse.kapua.service.account.module;
 
-import org.eclipse.kapua.KapuaRuntimeException;
-import org.eclipse.kapua.service.KapuaService;
-
-import com.google.inject.Injector;
-
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.servicediscovery.Record;
 import io.vertx.servicediscovery.ServiceDiscovery;
 import io.vertx.servicediscovery.ServiceReference;
 
-public class AccountServiceLocalTypeImpl implements AccountServiceLocalType {
-
-    private static Injector injector;    
+public class AccountServiceProviderTypeImpl implements AccountServiceProviderType {
 
     @Override
     public ServiceReference get(Vertx vertx, ServiceDiscovery discovery, Record record, JsonObject configuration) {
-        String serviceClassName = record.getName();
-        KapuaService kapuaService;
-        try {
-            kapuaService = (KapuaService) injector.getInstance(Class.forName(serviceClassName));
-            return new AccountServiceReference(vertx, discovery, record, configuration, kapuaService);
-        } 
-        catch (ClassNotFoundException e) {
-            throw KapuaRuntimeException.internalError(e);
-        }        
+        return new AccountServiceProviderReference(vertx, discovery, record, configuration);
     }
 
     @Override
     public String name() {
         return TYPE;
-    }
-
-    static void setInjector(Injector aInjector) {
-        injector = aInjector;
     }
 }

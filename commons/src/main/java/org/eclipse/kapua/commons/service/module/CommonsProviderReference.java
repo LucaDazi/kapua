@@ -9,9 +9,9 @@
  * Contributors:
  *     Eurotech - initial API and implementation
  *******************************************************************************/
-package org.eclipse.kapua.service.account.module;
+package org.eclipse.kapua.commons.service.module;
 
-import org.eclipse.kapua.service.KapuaService;
+import org.eclipse.kapua.locator.ServiceProvider;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -19,23 +19,30 @@ import io.vertx.servicediscovery.Record;
 import io.vertx.servicediscovery.ServiceDiscovery;
 import io.vertx.servicediscovery.types.AbstractServiceReference;
 
-public class AccountServiceReference extends AbstractServiceReference<KapuaService> {
+public class CommonsProviderReference extends AbstractServiceReference<ServiceProvider> {
 
-    private KapuaService kapuaService;
+    private ServiceProvider provider;
+    private CommonsBinder binder;
 
-    public AccountServiceReference(Vertx vertx, ServiceDiscovery discovery, Record record, JsonObject configuration, KapuaService kapuaService) {
+    public CommonsProviderReference(Vertx vertx, ServiceDiscovery discovery, Record record, JsonObject configuration) {
         super(vertx, discovery, record);
-        this.kapuaService = kapuaService;
     }
 
     @Override
-    protected KapuaService retrieve() {
-        return kapuaService;
+    protected ServiceProvider retrieve() {
+        return getOrCreate();
     }
 
     @Override
     public void close() {
-        // add your code here, if ever your service object needs cleanup
         super.close();
+    }
+
+    private ServiceProvider getOrCreate() {
+        if (provider == null) {
+            binder = new CommonsBinder();
+            provider = new CommonsProvider(binder);
+        }
+        return provider;
     }
 }

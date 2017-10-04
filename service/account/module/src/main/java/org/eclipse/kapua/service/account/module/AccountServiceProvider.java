@@ -11,15 +11,28 @@
  *******************************************************************************/
 package org.eclipse.kapua.service.account.module;
 
-import io.vertx.servicediscovery.Record;
-import io.vertx.servicediscovery.spi.ServiceType;
+import org.eclipse.kapua.locator.ServiceProvider;
 
-public interface AccountServiceLocalType extends ServiceType {
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 
-    public static String TYPE = "account-service-local";
+public class AccountServiceProvider implements ServiceProvider {
 
-    public static Record createRecord(String kapuaServiceClassName) {
-        Record record = new Record().setName(kapuaServiceClassName).setType(TYPE);
-        return record;
+    AccountServiceBinder binder;
+    Injector injector;
+
+    public AccountServiceProvider(AccountServiceBinder binder) {
+        this.binder = binder;
+        this.injector = Guice.createInjector(binder);
     }
+
+    @Override
+    public <T> T getInstance(Class<T> clazz) {
+
+        if (AccountServiceBinder.class.equals(clazz)) {
+            return clazz.cast(this.binder);
+        }
+        return injector.getInstance(clazz);
+    }
+
 }

@@ -11,10 +11,21 @@
  *******************************************************************************/
 package org.eclipse.kapua.commons.service.module;
 
-public interface KapuaServiceModule {
+import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
+import io.vertx.servicediscovery.Record;
+import io.vertx.servicediscovery.ServiceDiscovery;
+import io.vertx.servicediscovery.ServiceReference;
 
-    public void start() throws Exception;
+public class CommonsProviderTypeImpl implements CommonsProviderType {
 
-    public void stop() throws Exception;
+    @Override
+    public ServiceReference get(Vertx vertx, ServiceDiscovery discovery, Record record, JsonObject configuration) {
+        return new CommonsProviderReference(vertx, discovery, record, configuration);
+    }
 
+    @Override
+    public String name() {
+        return TYPE;
+    }
 }

@@ -9,10 +9,8 @@
  * Contributors:
  *     Eurotech - initial API and implementation
  *******************************************************************************/
-package org.eclipse.kapua.service.account.module;
+package org.eclipse.kapua.commons.service.module;
 
-import org.eclipse.kapua.service.account.AccountFactory;
-import org.eclipse.kapua.service.account.AccountService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,9 +24,9 @@ import io.vertx.servicediscovery.ServiceDiscovery;
  * 
  *
  */
-public class AccountServiceModule extends AbstractVerticle {
+public class CommonsModule extends AbstractVerticle {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AccountServiceModule.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommonsModule.class);
 
     private ServiceDiscovery discovery;
     private Record publishedRecord;
@@ -41,10 +39,9 @@ public class AccountServiceModule extends AbstractVerticle {
 
         JsonObject metadata = new JsonObject()
                 .put("provided-services", new JsonArray()
-                        .add(AccountService.class.getName())
-                        .add(AccountFactory.class.getName()));
+                        .add(CommonsBinder.class.getName()));
 
-        Record serviceRecord = AccountServiceProviderType.createRecord(AccountServiceModule.class.getName(), metadata);
+        Record serviceRecord = CommonsProviderType.createRecord(CommonsModule.class.getName(), metadata);
 
         discovery.publish(serviceRecord, ar -> {
             if (ar.succeeded()) {
@@ -63,7 +60,7 @@ public class AccountServiceModule extends AbstractVerticle {
             discovery.unpublish(publishedRecord.getRegistration(),
                     ar -> {
                         if (!ar.succeeded()) {
-                            LOGGER.warn("Something wrong with the unpublication of record {}" + publishedRecord.getName(), ar.cause());
+                            LOGGER.warn("Something wrong with the publication of record {}", publishedRecord.getName(), ar.cause());
                         }
                     });
         }

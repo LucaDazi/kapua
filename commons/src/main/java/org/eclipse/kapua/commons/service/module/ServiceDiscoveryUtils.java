@@ -9,71 +9,22 @@
  * Contributors:
  *     Eurotech - initial API and implementation
  *******************************************************************************/
-package org.eclipse.kapua.locator.vertx;
+package org.eclipse.kapua.commons.service.module;
 
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.eclipse.kapua.KapuaRuntimeException;
-import org.eclipse.kapua.locator.KapuaLocator;
-import org.eclipse.kapua.locator.ServiceProvider;
-import org.eclipse.kapua.model.KapuaObjectFactory;
-import org.eclipse.kapua.service.KapuaService;
-
-import io.vertx.core.Vertx;
 import io.vertx.servicediscovery.Record;
 import io.vertx.servicediscovery.ServiceDiscovery;
 import io.vertx.servicediscovery.ServiceReference;
 
-/**
- * 
- */
-public class VertxLocator extends KapuaLocator {
+public class ServiceDiscoveryUtils {
 
-    private Vertx vertx;
+    private ServiceDiscoveryUtils() {}
 
-    public VertxLocator(Vertx vertx) {
-        this.vertx = vertx;
-    }
-
-    @Override
-    public <S extends KapuaService> S getService(Class<S> serviceClass) {
-        return getInstance(vertx, serviceClass);
-    }
-
-    @Override
-    public <F extends KapuaObjectFactory> F getFactory(Class<F> factoryClass) {
-        return getInstance(vertx, factoryClass);
-    }
-
-    @Override
-    public List<KapuaService> getServices() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    private static <T> T getInstance(Vertx vertx, Class<T> clazz) {
-
-        ServiceDiscovery discovery = ServiceDiscovery.create(vertx);
-        ServiceReference reference = null;
-
-        try {
-            reference = getReference(discovery, "", clazz.getName());
-            ServiceProvider svcModule = reference.get();
-            return svcModule.getInstance(clazz);
-        } catch (Exception e) {
-            throw KapuaRuntimeException.internalError(e);
-        } finally {
-            if (reference != null) {
-                discovery.release(reference);
-            }
-        }
-    }
-
-    private static ServiceReference getReference(ServiceDiscovery discovery, String moduleName, String serviceName) 
+    public static ServiceReference getReference(ServiceDiscovery discovery, String moduleName, String serviceName) 
             throws Exception {
 
         try {
