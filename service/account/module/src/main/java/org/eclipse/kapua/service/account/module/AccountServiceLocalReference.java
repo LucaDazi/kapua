@@ -9,23 +9,32 @@
  * Contributors:
  *     Eurotech - initial API and implementation
  *******************************************************************************/
-package org.eclipse.kapua.commons.service.module;
+package org.eclipse.kapua.service.account.module;
+
+import org.eclipse.kapua.service.KapuaService;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.servicediscovery.Record;
 import io.vertx.servicediscovery.ServiceDiscovery;
-import io.vertx.servicediscovery.ServiceReference;
+import io.vertx.servicediscovery.types.AbstractServiceReference;
 
-public class CommonsProviderTypeImpl implements CommonsProviderType {
+public class AccountServiceLocalReference extends AbstractServiceReference<KapuaService> {
 
-    @Override
-    public ServiceReference get(Vertx vertx, ServiceDiscovery discovery, Record record, JsonObject configuration) {
-        return new CommonsProviderReference(vertx, discovery, record, configuration);
+    private KapuaService service;
+
+    public AccountServiceLocalReference(Vertx vertx, ServiceDiscovery discovery, Record record, JsonObject configuration, KapuaService service) {
+        super(vertx, discovery, record);
+        this.service = service;
     }
 
     @Override
-    public String name() {
-        return TYPE;
+    protected KapuaService retrieve() {
+        return service;
+    }
+
+    @Override
+    public void close() {
+        super.close();
     }
 }

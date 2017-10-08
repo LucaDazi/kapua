@@ -11,13 +11,15 @@
  *******************************************************************************/
 package org.eclipse.kapua.service.account.module;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.eclipse.kapua.commons.service.module.ServiceDiscoveryUtils;
 import org.eclipse.kapua.service.account.AccountFactory;
 import org.eclipse.kapua.service.account.AccountService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.json.JsonArray;
+import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.servicediscovery.Record;
 import io.vertx.servicediscovery.ServiceDiscovery;
@@ -28,10 +30,12 @@ import io.vertx.servicediscovery.ServiceDiscovery;
  */
 public class AccountServiceModule extends AbstractVerticle {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AccountServiceModule.class);
-
     private ServiceDiscovery discovery;
-    private Record publishedRecord;
+    private List<Future<Record>> publishedRecordFutures;
+
+    public AccountServiceModule() {
+        publishedRecordFutures = new ArrayList<Future<Record>>();
+    }
 
     @Override
     public void start() throws Exception {
@@ -39,34 +43,24 @@ public class AccountServiceModule extends AbstractVerticle {
 
         discovery = ServiceDiscovery.create(vertx);
 
-        JsonObject metadata = new JsonObject()
-                .put("provided-services", new JsonArray()
-                        .add(AccountService.class.getName())
-                        .add(AccountFactory.class.getName()));
+        String serviceName = AccountService.class.getName();
+        Record serviceRecord = AccountServiceLocalType.createRecord(serviceName, "local", new JsonObject());
+        publishedRecordFutures.add(ServiceDiscoveryUtils.publish(discovery, serviceRecord));
 
-        Record serviceRecord = AccountServiceProviderType.createRecord(AccountServiceModule.class.getName(), metadata);
-
-        discovery.publish(serviceRecord, ar -> {
-            if (ar.succeeded()) {
-                publishedRecord = ar.result();
-                LOGGER.warn("Successfull publication of record {}", serviceRecord.getName());
-            } else {
-                LOGGER.warn("Something wrong with the publication of record {}", serviceRecord.getName(), ar.cause());
-            }
-        });
+        String factoryName = AccountFactory.class.getName();
+        Record factoryRecord = AccountServiceLocalType.createRecord(factoryName, "local", new JsonObject());
+        publishedRecordFutures.add(ServiceDiscoveryUtils.publish(discovery, factoryRecord));
     }
 
     @Override
     public void stop() throws Exception {
         super.stop();
-        if (publishedRecord != null) {
-            discovery.unpublish(publishedRecord.getRegistration(),
-                    ar -> {
-                        if (!ar.succeeded()) {
-                            LOGGER.warn("Something wrong with the unpublication of record {}" + publishedRecord.getName(), ar.cause());
-                        }
-                    });
+        for(Future<Record> recordFuture:publishedRecordFutures) {
+            if (recordFuture.succeeded()) {
+                ServiceDiscoveryUtils.unpublish(discovery, recordFuture.result());
+            }
         }
+        publishedRecordFutures.clear();
         if (discovery != null) {
             discovery.close();
         }

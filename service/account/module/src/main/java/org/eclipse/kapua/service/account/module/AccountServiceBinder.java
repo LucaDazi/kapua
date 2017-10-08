@@ -11,6 +11,9 @@
  *******************************************************************************/
 package org.eclipse.kapua.service.account.module;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.eclipse.kapua.commons.service.module.CommonsBinder;
 import org.eclipse.kapua.service.account.AccountFactory;
 import org.eclipse.kapua.service.account.AccountService;
@@ -22,9 +25,17 @@ import com.google.inject.AbstractModule;
 public class AccountServiceBinder extends AbstractModule {
 
     private CommonsBinder commonsBinder;
+    private Map<String, Class<?>> exportedObjects;
 
     public AccountServiceBinder(CommonsBinder binder) {
         this.commonsBinder = binder;
+        this.exportedObjects = new HashMap<String, Class<?>>();
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> Class<T> getExportedClass(String className) {
+        // Safe conversion per contruction of exportedObjects
+        return (Class<T>) exportedObjects.get(className);
     }
 
     @Override
@@ -33,6 +44,9 @@ public class AccountServiceBinder extends AbstractModule {
         install(commonsBinder);
 
         bind(AccountService.class).to(AccountServiceImpl.class);    
+        exportedObjects.put(AccountService.class.getName(), AccountService.class);
+
         bind(AccountFactory.class).to(AccountFactoryImpl.class);
+        exportedObjects.put(AccountFactory.class.getName(), AccountFactory.class);
     } 
 }

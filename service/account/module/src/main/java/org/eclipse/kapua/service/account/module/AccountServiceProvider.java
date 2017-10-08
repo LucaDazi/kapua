@@ -28,10 +28,12 @@ public class AccountServiceProvider implements ServiceProvider {
 
     @Override
     public <T> T getInstance(Class<T> clazz) {
+        return injector.getInstance(clazz);
+    }
 
-        if (AccountServiceBinder.class.equals(clazz)) {
-            return clazz.cast(this.binder);
-        }
+    @Override
+    public <T> T getInstance(String className) {
+        Class<T> clazz = binder.getExportedClass(className);
         return injector.getInstance(clazz);
     }
 

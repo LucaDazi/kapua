@@ -27,7 +27,6 @@ import javax.servlet.ServletContextListener;
 
 import org.eclipse.kapua.KapuaException;
 import org.eclipse.kapua.app.console.ConsoleJAXBContextProvider;
-import org.eclipse.kapua.commons.service.module.CommonsModule;
 import org.eclipse.kapua.commons.setting.system.SystemSetting;
 import org.eclipse.kapua.commons.util.xml.JAXBContextProvider;
 import org.eclipse.kapua.commons.util.xml.XmlUtil;
@@ -88,13 +87,6 @@ public class ConsoleListener implements ServletContextListener {
 
         VertxOptions vertxOpt = new VertxOptions();
         vertx = Vertx.vertx(vertxOpt);
-        vertx.deployVerticle(new CommonsModule(), ar -> {
-            if (ar.succeeded()) {
-                LOGGER.info("Verticle {} successfully deployed", CommonsModule.class.getName());
-            } else {
-                LOGGER.warn("Something went wrong deployng vericle {}", CommonsModule.class.getName(), ar.cause());
-            }
-        });
         vertx.deployVerticle(new AccountServiceModule(), ar -> {
             if (ar.succeeded()) {
                 LOGGER.info("Verticle {} successfully deployed", AccountServiceModule.class.getName());

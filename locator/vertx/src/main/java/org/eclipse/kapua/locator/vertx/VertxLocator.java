@@ -16,10 +16,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 
 import org.eclipse.kapua.KapuaRuntimeException;
 import org.eclipse.kapua.locator.KapuaLocator;
-import org.eclipse.kapua.locator.ServiceProvider;
 import org.eclipse.kapua.model.KapuaObjectFactory;
 import org.eclipse.kapua.service.KapuaService;
 
@@ -57,23 +57,30 @@ public class VertxLocator extends KapuaLocator {
 
     private static <T> T getInstance(Vertx vertx, Class<T> clazz) {
 
-        ServiceDiscovery discovery = ServiceDiscovery.create(vertx);
+        ServiceDiscovery discovery = null;
         ServiceReference reference = null;
 
         try {
-            reference = getReference(discovery, "", clazz.getName());
-            ServiceProvider svcModule = reference.get();
-            return svcModule.getInstance(clazz);
+            discovery = ServiceDiscovery.create(vertx);
+            reference = null;
+
+            reference = getReference(discovery, record -> {
+                return record.getName().equals(clazz.getName());
+            });
+            return reference.getAs(clazz);
         } catch (Exception e) {
             throw KapuaRuntimeException.internalError(e);
         } finally {
             if (reference != null) {
                 discovery.release(reference);
             }
+            if (discovery != null) {
+                discovery.close();
+            }
         }
     }
 
-    private static ServiceReference getReference(ServiceDiscovery discovery, String moduleName, String serviceName) 
+    private static ServiceReference getReference(ServiceDiscovery discovery, Function<Record, Boolean> funct)
             throws Exception {
 
         try {
@@ -90,10 +97,7 @@ public class VertxLocator extends KapuaLocator {
                 // Returns a future that has to be checked later on.
                 CompletableFuture<Record> futureRecord = new CompletableFuture<Record>();
 
-                discovery.getRecord(record -> {
-                    return record.getMetadata().containsKey("provided-services")
-                            && record.getMetadata().getJsonArray("provided-services").contains(serviceName);
-                }, res -> {
+                discovery.getRecord(funct, res -> {
                     if (res.succeeded()) {
                         futureRecord.complete(res.result());
                     } else {
@@ -112,12 +116,12 @@ public class VertxLocator extends KapuaLocator {
             }
 
             if (attempts > 10) {
-                throw new TimeoutException("Timeout expired for: " + serviceName);
+                throw new TimeoutException("Timeout expired searching for record");
             }
 
             return reference;
 
-        } catch (TimeoutException|InterruptedException|ExecutionException e) {
+        } catch (TimeoutException | InterruptedException | ExecutionException e) {
             throw new Exception(e);
         }
     }

@@ -14,4 +14,7 @@ package org.eclipse.kapua.locator;
 public interface ServiceProvider {
 
     public <T> T getInstance(Class<T> clazz);
+
+    public <T> T getInstance(String className); 
+
 }

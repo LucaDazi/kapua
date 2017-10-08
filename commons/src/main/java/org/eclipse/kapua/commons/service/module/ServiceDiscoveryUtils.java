@@ -11,20 +11,28 @@
  *******************************************************************************/
 package org.eclipse.kapua.commons.service.module;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.vertx.core.Future;
 import io.vertx.servicediscovery.Record;
 import io.vertx.servicediscovery.ServiceDiscovery;
 import io.vertx.servicediscovery.ServiceReference;
 
 public class ServiceDiscoveryUtils {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServiceDiscoveryUtils.class);
+
     private ServiceDiscoveryUtils() {}
 
-    public static ServiceReference getReference(ServiceDiscovery discovery, String moduleName, String serviceName) 
+    public static ServiceReference getReference(ServiceDiscovery discovery, Function<Record,Boolean> funct) 
             throws Exception {
 
         try {
@@ -41,10 +49,7 @@ public class ServiceDiscoveryUtils {
                 // Returns a future that has to be checked later on.
                 CompletableFuture<Record> futureRecord = new CompletableFuture<Record>();
 
-                discovery.getRecord(record -> {
-                    return record.getMetadata().containsKey("provided-services")
-                            && record.getMetadata().getJsonArray("provided-services").contains(serviceName);
-                }, res -> {
+                discovery.getRecord(funct, res -> {
                     if (res.succeeded()) {
                         futureRecord.complete(res.result());
                     } else {
@@ -63,7 +68,7 @@ public class ServiceDiscoveryUtils {
             }
 
             if (attempts > 10) {
-                throw new TimeoutException("Timeout expired for: " + serviceName);
+                throw new TimeoutException("Timeout expired searching for record");
             }
 
             return reference;
@@ -71,5 +76,44 @@ public class ServiceDiscoveryUtils {
         } catch (TimeoutException|InterruptedException|ExecutionException e) {
             throw new Exception(e);
         }
+    }
+
+    public static Future<Record> publish(ServiceDiscovery discovery, Record record) {
+
+        Objects.requireNonNull(discovery);
+        Objects.requireNonNull(record);
+
+        Future<Record> publishedRecord = Future.future();
+
+        discovery.publish(record, ar -> {
+            if (ar.succeeded()) {
+                publishedRecord.complete(ar.result());
+                LOGGER.debug("Record successfully published {}", ar.result().getName());
+            } else {
+                publishedRecord.fail(ar.cause());
+                LOGGER.warn("Failed to publish record", ar.cause());
+            }
+        });
+
+        return publishedRecord;
+    }
+
+    public static Future<Record> unpublish(ServiceDiscovery discovery, Record record) {
+
+        Objects.requireNonNull(discovery);
+        Objects.requireNonNull(record);
+
+        Future<Record> future = Future.future();
+        discovery.unpublish(record.getRegistration(),
+                ar -> {
+                    if (ar.succeeded()) {
+                        future.complete();
+                        LOGGER.debug("Record successfully unpublished {}", record.getName());
+                    } else {
+                        future.fail(ar.cause());
+                        LOGGER.warn("Failed to unbuplish record", ar.cause());
+                    }
+                });     
+        return future;
     }
 }

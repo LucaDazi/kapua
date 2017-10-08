@@ -11,12 +11,34 @@
  *******************************************************************************/
 package org.eclipse.kapua.commons.service.module;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.google.inject.AbstractModule;
 
 public class CommonsBinder extends AbstractModule {
 
-    public CommonsBinder() {
-     }
+    private Map<String, Class<?>> exportedObjects;
+
+    private static CommonsBinder instance;
+
+    static {
+        instance = new CommonsBinder();
+    }
+
+    private CommonsBinder() {
+        this.exportedObjects = new HashMap<String, Class<?>>();
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> Class<T> getExportedClass(String className) {
+        // Cast safe by construction of exportedObjects
+        return (Class<T>) exportedObjects.get(className);
+    }
+
+    public static CommonsBinder getInstance() {
+        return instance;
+    }
 
     @Override
     protected void configure() {

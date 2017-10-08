@@ -11,21 +11,29 @@
  *******************************************************************************/
 package org.eclipse.kapua.service.account.module;
 
+import org.eclipse.kapua.model.KapuaObjectFactory;
+
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.servicediscovery.Record;
 import io.vertx.servicediscovery.ServiceDiscovery;
-import io.vertx.servicediscovery.ServiceReference;
+import io.vertx.servicediscovery.types.AbstractServiceReference;
 
-public class AccountServiceProviderTypeImpl implements AccountServiceProviderType {
+public class AccountObjectFactoryLocalReference extends AbstractServiceReference<KapuaObjectFactory> {
 
-    @Override
-    public ServiceReference get(Vertx vertx, ServiceDiscovery discovery, Record record, JsonObject configuration) {
-        return new AccountServiceProviderReference(vertx, discovery, record, configuration);
+    private KapuaObjectFactory factory;
+    public AccountObjectFactoryLocalReference(Vertx vertx, ServiceDiscovery discovery, Record record, JsonObject configuration, KapuaObjectFactory factory) {
+        super(vertx, discovery, record);
+        this.factory = factory;
     }
 
     @Override
-    public String name() {
-        return TYPE;
+    protected KapuaObjectFactory retrieve() {
+        return factory;
+    }
+
+    @Override
+    public void close() {
+        super.close();
     }
 }

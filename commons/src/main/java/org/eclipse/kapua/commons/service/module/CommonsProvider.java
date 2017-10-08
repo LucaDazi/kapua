@@ -18,20 +18,31 @@ import com.google.inject.Injector;
 
 public class CommonsProvider implements ServiceProvider {
 
-    CommonsBinder binder;
-    Injector injector;
+    private static CommonsProvider instance;
 
-    public CommonsProvider(CommonsBinder binder) {
-        this.binder = binder;
+    private CommonsBinder binder;
+    private Injector injector;
+
+    static {
+        instance = new CommonsProvider();
+    }
+
+    private CommonsProvider() {
+        this.binder = CommonsBinder.getInstance();
         this.injector = Guice.createInjector(binder);
     }
 
-    @Override
-    public <T> T getInstance(Class<T> clazz) {
+    public static CommonsProvider getInstance() {
+        return instance;
+    }
 
-        if (CommonsBinder.class.equals(clazz)) {
-            return clazz.cast(this.binder);
-        }
+    public <T> T getInstance(Class<T> clazz) {
+        return injector.getInstance(clazz);
+    }
+
+    @Override
+    public <T> T getInstance(String className) {
+        Class<T> clazz = binder.getExportedClass(className);
         return injector.getInstance(clazz);
     }
 
