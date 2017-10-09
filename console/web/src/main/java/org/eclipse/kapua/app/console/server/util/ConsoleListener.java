@@ -97,7 +97,8 @@ public class ConsoleListener implements ServletContextListener {
 
         LOGGER.info("Starting vertex...DONE");
 
-        VertxLocator vertxLocator = new VertxLocator(vertx);
+        VertxLocator vertxLocator = VertxLocator.newInstace(vertx);
+        
         LOGGER.info(">>>>>>> accountServiceRequest....");
         AccountService accountService = vertxLocator.getService(AccountService.class);
         LOGGER.info(">>>>>>> accountService: " + accountService);

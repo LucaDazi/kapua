@@ -35,8 +35,12 @@ public class VertxLocator extends KapuaLocator {
 
     private Vertx vertx;
 
-    public VertxLocator(Vertx vertx) {
+    private VertxLocator(Vertx vertx) {
         this.vertx = vertx;
+    }
+
+    public static VertxLocator newInstace(Vertx vertx) {
+        return new VertxLocator(vertx);
     }
 
     @Override
