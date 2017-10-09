@@ -20,6 +20,7 @@ import org.eclipse.kapua.service.account.AccountFactory;
 import org.eclipse.kapua.service.account.AccountService;
 import org.eclipse.kapua.service.account.internal.AccountFactoryImpl;
 import org.eclipse.kapua.service.account.internal.AccountServiceImpl;
+import org.eclipse.kapua.service.account.internal.AccountServiceModule;
 
 import com.google.inject.AbstractModule;
 

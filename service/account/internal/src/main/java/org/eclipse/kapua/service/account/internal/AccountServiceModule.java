@@ -9,7 +9,7 @@
  * Contributors:
  *     Eurotech - initial API and implementation
  *******************************************************************************/
-package org.eclipse.kapua.service.account.module;
+package org.eclipse.kapua.service.account.internal;
 
 import org.eclipse.kapua.service.KapuaServiceModule;
 import org.slf4j.Logger;

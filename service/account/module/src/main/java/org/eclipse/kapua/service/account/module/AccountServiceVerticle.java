@@ -18,6 +18,7 @@ import org.eclipse.kapua.commons.service.module.ServiceDiscoveryUtils;
 import org.eclipse.kapua.service.KapuaServiceModule;
 import org.eclipse.kapua.service.account.AccountFactory;
 import org.eclipse.kapua.service.account.AccountService;
+import org.eclipse.kapua.service.account.internal.AccountServiceModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

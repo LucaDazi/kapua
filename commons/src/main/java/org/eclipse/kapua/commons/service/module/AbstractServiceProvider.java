@@ -20,6 +20,7 @@ public abstract class AbstractServiceProvider {
     }
 
     public <T> T getInstance(String className) {
+        // Cast safety must be granted by implementation of getClassFromName
         Class<T> clazz = (Class<T>) getClassFromName(className);
         return getInjector().getInstance(clazz);
     }
