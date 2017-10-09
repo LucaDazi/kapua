@@ -9,7 +9,7 @@
  * Contributors:
  *     Eurotech - initial API and implementation
  *******************************************************************************/
-package org.eclipse.kapua.service.account.module;
+package org.eclipse.kapua.commons.service.module;
 
 import org.eclipse.kapua.service.KapuaService;
 
@@ -19,11 +19,11 @@ import io.vertx.servicediscovery.Record;
 import io.vertx.servicediscovery.ServiceDiscovery;
 import io.vertx.servicediscovery.types.AbstractServiceReference;
 
-public class AccountServiceLocalReference extends AbstractServiceReference<KapuaService> {
+public class KapuaServiceLocalReference extends AbstractServiceReference<KapuaService> {
 
     private KapuaService service;
 
-    public AccountServiceLocalReference(Vertx vertx, ServiceDiscovery discovery, Record record, JsonObject configuration, KapuaService service) {
+    public KapuaServiceLocalReference(Vertx vertx, ServiceDiscovery discovery, Record record, JsonObject configuration, KapuaService service) {
         super(vertx, discovery, record);
         this.service = service;
     }

@@ -9,9 +9,9 @@
  * Contributors:
  *     Eurotech - initial API and implementation
  *******************************************************************************/
-package org.eclipse.kapua.service.account.module;
+package org.eclipse.kapua.commons.service.module;
 
-import org.eclipse.kapua.model.KapuaObjectFactory;
+import org.eclipse.kapua.service.KapuaServiceModule;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -19,17 +19,18 @@ import io.vertx.servicediscovery.Record;
 import io.vertx.servicediscovery.ServiceDiscovery;
 import io.vertx.servicediscovery.types.AbstractServiceReference;
 
-public class AccountObjectFactoryLocalReference extends AbstractServiceReference<KapuaObjectFactory> {
+public class KapuaServiceModuleLocalReference extends AbstractServiceReference<KapuaServiceModule> {
 
-    private KapuaObjectFactory factory;
-    public AccountObjectFactoryLocalReference(Vertx vertx, ServiceDiscovery discovery, Record record, JsonObject configuration, KapuaObjectFactory factory) {
+    private KapuaServiceModule serviceModule;
+
+    public KapuaServiceModuleLocalReference(Vertx vertx, ServiceDiscovery discovery, Record record, JsonObject configuration, KapuaServiceModule serviceModule) {
         super(vertx, discovery, record);
-        this.factory = factory;
+        this.serviceModule = serviceModule;
     }
 
     @Override
-    protected KapuaObjectFactory retrieve() {
-        return factory;
+    protected KapuaServiceModule retrieve() {
+        return serviceModule;
     }
 
     @Override

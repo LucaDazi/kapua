@@ -33,7 +33,7 @@ import org.eclipse.kapua.commons.util.xml.XmlUtil;
 import org.eclipse.kapua.locator.vertx.VertxLocator;
 import org.eclipse.kapua.service.account.AccountFactory;
 import org.eclipse.kapua.service.account.AccountService;
-import org.eclipse.kapua.service.account.module.AccountServiceModule;
+import org.eclipse.kapua.service.account.module.AccountServiceVerticle;
 import org.eclipse.kapua.service.liquibase.KapuaLiquibaseClient;
 import org.eclipse.kapua.service.scheduler.quartz.SchedulerServiceInit;
 import org.slf4j.Logger;
@@ -87,11 +87,11 @@ public class ConsoleListener implements ServletContextListener {
 
         VertxOptions vertxOpt = new VertxOptions();
         vertx = Vertx.vertx(vertxOpt);
-        vertx.deployVerticle(new AccountServiceModule(), ar -> {
+        vertx.deployVerticle(new AccountServiceVerticle(), ar -> {
             if (ar.succeeded()) {
-                LOGGER.info("Verticle {} successfully deployed", AccountServiceModule.class.getName());
+                LOGGER.info("Verticle {} successfully deployed", AccountServiceVerticle.class.getName());
             } else {
-                LOGGER.warn("Something went wrong deployng vericle {}", AccountServiceModule.class.getName(), ar.cause());
+                LOGGER.warn("Something went wrong deployng vericle {}", AccountServiceVerticle.class.getName(), ar.cause());
             }
         });
 

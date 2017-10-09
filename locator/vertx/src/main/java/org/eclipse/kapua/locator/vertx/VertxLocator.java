@@ -105,12 +105,16 @@ public class VertxLocator extends KapuaLocator {
                     }
                 });
 
-                // Wait until completion or timeout expiration
-                Record serviceRecord = futureRecord.get(1000, TimeUnit.MILLISECONDS);
-                if (serviceRecord != null) {
-                    reference = discovery.getReference(serviceRecord);
-                } else {
-                    Thread.sleep(1000);
+                try {
+                    // Wait until completion or timeout expiration
+                    Record serviceRecord = futureRecord.get(1000, TimeUnit.MILLISECONDS);
+                    if (serviceRecord != null) {
+                        reference = discovery.getReference(serviceRecord);
+                    } else {
+                        Thread.sleep(1000);
+                        attempts++;
+                    }
+                } catch (TimeoutException e) {
                     attempts++;
                 }
             }

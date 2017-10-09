@@ -11,58 +11,23 @@
  *******************************************************************************/
 package org.eclipse.kapua.service.account.module;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.eclipse.kapua.service.KapuaServiceModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import org.eclipse.kapua.commons.service.module.ServiceDiscoveryUtils;
-import org.eclipse.kapua.service.account.AccountFactory;
-import org.eclipse.kapua.service.account.AccountService;
+public class AccountServiceModule implements KapuaServiceModule {
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Future;
-import io.vertx.core.json.JsonObject;
-import io.vertx.servicediscovery.Record;
-import io.vertx.servicediscovery.ServiceDiscovery;
+    private static final Logger LOGGER = LoggerFactory.getLogger(AccountServiceModule.class);
 
-/**
- * 
- *
- */
-public class AccountServiceModule extends AbstractVerticle {
-
-    private ServiceDiscovery discovery;
-    private List<Future<Record>> publishedRecordFutures;
-
-    public AccountServiceModule() {
-        publishedRecordFutures = new ArrayList<Future<Record>>();
+    @Override
+    public void start() {
+        LOGGER.info(">>>>> STARTING {} .... ", this.getClass().getSimpleName());       
+        LOGGER.info(">>>>> STARTING {} .... DONE", this.getClass().getSimpleName());       
     }
 
     @Override
-    public void start() throws Exception {
-        super.start();
-
-        discovery = ServiceDiscovery.create(vertx);
-
-        String serviceName = AccountService.class.getName();
-        Record serviceRecord = AccountServiceLocalType.createRecord(serviceName, "local", new JsonObject());
-        publishedRecordFutures.add(ServiceDiscoveryUtils.publish(discovery, serviceRecord));
-
-        String factoryName = AccountFactory.class.getName();
-        Record factoryRecord = AccountServiceLocalType.createRecord(factoryName, "local", new JsonObject());
-        publishedRecordFutures.add(ServiceDiscoveryUtils.publish(discovery, factoryRecord));
-    }
-
-    @Override
-    public void stop() throws Exception {
-        super.stop();
-        for(Future<Record> recordFuture:publishedRecordFutures) {
-            if (recordFuture.succeeded()) {
-                ServiceDiscoveryUtils.unpublish(discovery, recordFuture.result());
-            }
-        }
-        publishedRecordFutures.clear();
-        if (discovery != null) {
-            discovery.close();
-        }
+    public void stop() {
+        LOGGER.info(">>>>> STOPPING {} .... ", this.getClass().getSimpleName());       
+        LOGGER.info(">>>>> STOPPING {} .... DONE", this.getClass().getSimpleName());       
     }
 }

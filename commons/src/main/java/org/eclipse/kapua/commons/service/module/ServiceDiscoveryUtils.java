@@ -18,10 +18,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
+import org.eclipse.kapua.service.KapuaServiceModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 import io.vertx.servicediscovery.Record;
 import io.vertx.servicediscovery.ServiceDiscovery;
 import io.vertx.servicediscovery.ServiceReference;
@@ -58,11 +61,16 @@ public class ServiceDiscoveryUtils {
                 });
 
                 // Wait until completion or timeout expiration
-                Record serviceRecord = futureRecord.get(1000, TimeUnit.MILLISECONDS);
-                if (serviceRecord != null) {
-                    reference = discovery.getReference(serviceRecord);
-                } else {
-                    Thread.sleep(1000);
+                Record serviceRecord = null;
+                try {
+                    serviceRecord = futureRecord.get(1000, TimeUnit.MILLISECONDS);
+                    if (serviceRecord != null) {
+                        reference = discovery.getReference(serviceRecord);
+                    } else {
+                        Thread.sleep(1000);
+                        attempts++;
+                    }
+                } catch (TimeoutException e) {
                     attempts++;
                 }
             }
@@ -115,5 +123,30 @@ public class ServiceDiscoveryUtils {
                     }
                 });     
         return future;
+    }
+
+    public static <T extends KapuaServiceModule> void startModule(Vertx vertx, ServiceDiscovery discovery, AsyncResult<Record> publishedRecordSearch, Class<T> moduleClazz) {
+        // If a matching record has been found proceed starting the module otherwise sentout a message
+        if (publishedRecordSearch.succeeded()) {
+            // The code to be executed is not reactive, use executeBlocking
+            vertx.executeBlocking(blockingExecution -> {
+                ServiceReference reference = discovery.getReference(publishedRecordSearch.result());
+                T module = reference.getAs(moduleClazz);
+                if (module == null) {
+                    blockingExecution.fail(new NullPointerException("Null module: AccountServiceModule"));
+                }
+                // Start the module and complete the execution
+                module.start();
+                blockingExecution.complete();
+            }, execResult -> {
+                if (execResult.succeeded()) {
+                    LOGGER.info("Module started: {}", moduleClazz.getName());
+                } else {
+                    LOGGER.warn("Failed to start module: " + moduleClazz.getName(), execResult.cause());
+                }
+            });
+        } else {
+            LOGGER.warn("Failed to start module: " + moduleClazz.getName(), publishedRecordSearch.cause());
+        }       
     }
 }

@@ -9,32 +9,22 @@
  * Contributors:
  *     Eurotech - initial API and implementation
  *******************************************************************************/
-package org.eclipse.kapua.service.account.module;
+package org.eclipse.kapua.commons.service.module;
 
-import org.eclipse.kapua.locator.ServiceProvider;
-
-import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-public class AccountServiceProvider implements ServiceProvider {
+public abstract class AbstractServiceProvider {
 
-    AccountServiceBinder binder;
-    Injector injector;
-
-    public AccountServiceProvider(AccountServiceBinder binder) {
-        this.binder = binder;
-        this.injector = Guice.createInjector(binder);
-    }
-
-    @Override
     public <T> T getInstance(Class<T> clazz) {
-        return injector.getInstance(clazz);
+        return getInjector().getInstance(clazz);
     }
 
-    @Override
     public <T> T getInstance(String className) {
-        Class<T> clazz = binder.getExportedClass(className);
-        return injector.getInstance(clazz);
+        Class<T> clazz = (Class<T>) getClassFromName(className);
+        return getInjector().getInstance(clazz);
     }
 
+    protected abstract Injector getInjector();
+
+    protected abstract Class<?> getClassFromName(String className);
 }

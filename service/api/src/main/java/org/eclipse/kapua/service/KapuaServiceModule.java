@@ -9,12 +9,12 @@
  * Contributors:
  *     Eurotech - initial API and implementation
  *******************************************************************************/
-package org.eclipse.kapua.locator;
+package org.eclipse.kapua.service;
 
-public interface ServiceProvider {
 
-    public <T> T getInstance(Class<T> clazz);
+public interface KapuaServiceModule {
 
-    public <T> T getInstance(String className); 
+    public void start();
 
+    public void stop();
 }

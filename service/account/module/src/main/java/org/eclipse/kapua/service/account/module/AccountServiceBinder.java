@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.kapua.commons.service.module.CommonsBinder;
+import org.eclipse.kapua.service.KapuaServiceModule;
 import org.eclipse.kapua.service.account.AccountFactory;
 import org.eclipse.kapua.service.account.AccountService;
 import org.eclipse.kapua.service.account.internal.AccountFactoryImpl;
@@ -42,6 +43,9 @@ public class AccountServiceBinder extends AbstractModule {
     protected void configure() {
 
         install(commonsBinder);
+
+        bind(KapuaServiceModule.class).to(AccountServiceModule.class);
+        exportedObjects.put(KapuaServiceModule.class.getName(), AccountServiceModule.class);
 
         bind(AccountService.class).to(AccountServiceImpl.class);    
         exportedObjects.put(AccountService.class.getName(), AccountService.class);
