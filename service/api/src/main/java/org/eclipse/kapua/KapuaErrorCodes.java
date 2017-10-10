@@ -60,6 +60,10 @@ public enum KapuaErrorCodes implements KapuaErrorCode {
      */
     OPERATION_NOT_SUPPORTED,
     /**
+     * Locator already exists
+     */
+    LOCATOR_ALREADY_EXISTS,
+    /**
      * Internal error
      */
     INTERNAL_ERROR,

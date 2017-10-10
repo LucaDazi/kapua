@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.eclipse.kapua.KapuaLocatorExistsException;
 import org.eclipse.kapua.KapuaRuntimeException;
 
 public abstract class KapuaLocatorManager {
@@ -26,8 +27,12 @@ public abstract class KapuaLocatorManager {
     private KapuaLocatorManager() {
     }
 
-    public static void registerInstance(KapuaLocator locator) {
+    public static void registerInstance(KapuaLocator locator) throws KapuaLocatorExistsException {
         Objects.requireNonNull(locator);
+        if (instances.containsKey(locator.getClass().getName())) {
+            throw new KapuaLocatorExistsException(locator.getClass().getName());
+        }
+
         instances.put(locator.getClass().getName(), locator);
     }
 

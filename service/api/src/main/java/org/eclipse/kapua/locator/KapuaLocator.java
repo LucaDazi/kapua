@@ -14,6 +14,7 @@ package org.eclipse.kapua.locator;
 
 import java.util.ServiceLoader;
 
+import org.eclipse.kapua.KapuaLocatorExistsException;
 import org.eclipse.kapua.KapuaRuntimeErrorCodes;
 import org.eclipse.kapua.KapuaRuntimeException;
 import org.slf4j.Logger;
@@ -72,30 +73,35 @@ public abstract class KapuaLocator implements KapuaServiceLoader {
 
         int registeredInstances = 0;
 
-        LOGGER.info("initializing Servicelocator instance... ");
         locatorClassName = KapuaLocator.tryGetConfiguredClassName();
         if (locatorClassName != null && !locatorClassName.trim().isEmpty()) {
             try {
+                LOGGER.info("Initializing Servicelocator with the configured instance... ");
                 KapuaLocatorManager.registerInstance((KapuaLocator) Class.forName(locatorClassName).newInstance());
                 registeredInstances++;
+                LOGGER.info("Initialize Servicelocator with the configured instance... DONE");
                 return;
-            } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-                LOGGER.info("An error occurred during Servicelocator initialization", e);
+            } catch (KapuaLocatorExistsException | InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+                LOGGER.warn("An error occurred during Servicelocator initialization", e);
             }
         }
 
-        // proceed with the default service locator instantiation if env variable is null or some error occurred 
+        // proceed with the default service locator instantiation if env variable is null or some error occurred
         // during the specific service locator instantiation
 
-        LOGGER.info("initialize Servicelocator with the default instance... ");
+        LOGGER.info("Initialize Servicelocator with the default instance... ");
         ServiceLoader<KapuaLocator> serviceLocatorLoaders = ServiceLoader.load(KapuaLocator.class);
         for (KapuaLocator locator : serviceLocatorLoaders) {
-            // simply return the first
-            LOGGER.info("initialize Servicelocator with the default instance... DONE");
-            KapuaLocatorManager.registerInstance(locator);
-            locatorClassName = locator.getClass().getName();
-            registeredInstances++;
-            return;
+            try {
+                // simply return the first
+                KapuaLocatorManager.registerInstance(locator);
+                locatorClassName = locator.getClass().getName();
+                registeredInstances++;
+                LOGGER.info("Initialize Servicelocator with the default instance... DONE");
+                return;
+            } catch (KapuaLocatorExistsException e) {
+                LOGGER.warn("An error occurred during Servicelocator initialization", e);
+            }
         }
 
         // none returned
