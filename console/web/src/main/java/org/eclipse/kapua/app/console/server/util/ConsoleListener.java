@@ -97,8 +97,10 @@ public class ConsoleListener implements ServletContextListener {
 
         LOGGER.info("Starting vertex...DONE");
 
+//        System.setProperty(KapuaLocator.LOCATOR_CLASS_NAME_SYSTEM_PROPERTY, VertxLocator.class.getName());
         VertxLocator vertxLocator = VertxLocator.newInstace(vertx);
-        
+//        KapuaLocatorManager.registerInstance(vertxLocator);
+
         LOGGER.info(">>>>>>> accountServiceRequest....");
         AccountService accountService = vertxLocator.getService(AccountService.class);
         LOGGER.info(">>>>>>> accountService: " + accountService);
