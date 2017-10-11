@@ -49,17 +49,18 @@ public class AccountServiceVerticle extends AbstractVerticle {
 
         discovery = ServiceDiscovery.create(vertx);
 
+        String address = this.config().getString("address-local");
         String moduleName = KapuaServiceModule.class.getName();
-        Record moduleRecord = AccountServiceLocalType.createRecord(moduleName, "local", new JsonObject());
+        Record moduleRecord = AccountServiceLocalType.createRecord(moduleName, address, new JsonObject());
         Future<Record> moduleRecordPublishing = ServiceDiscoveryUtils.publish(discovery, moduleRecord);
         publishedRecordFutures.add(moduleRecordPublishing);
 
         String serviceName = AccountService.class.getName();
-        Record serviceRecord = AccountServiceLocalType.createRecord(serviceName, "local", new JsonObject());
+        Record serviceRecord = AccountServiceLocalType.createRecord(serviceName, address, new JsonObject());
         publishedRecordFutures.add(ServiceDiscoveryUtils.publish(discovery, serviceRecord));
 
         String factoryName = AccountFactory.class.getName();
-        Record factoryRecord = AccountServiceLocalType.createRecord(factoryName, "local", new JsonObject());
+        Record factoryRecord = AccountServiceLocalType.createRecord(factoryName, address, new JsonObject());
         publishedRecordFutures.add(ServiceDiscoveryUtils.publish(discovery, factoryRecord));
 
         // Start modules

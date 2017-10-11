@@ -21,6 +21,7 @@ import static org.eclipse.kapua.commons.setting.system.SystemSettingKey.DB_SCHEM
 import static org.eclipse.kapua.commons.setting.system.SystemSettingKey.DB_USERNAME;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -39,8 +40,10 @@ import org.eclipse.kapua.service.scheduler.quartz.SchedulerServiceInit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.json.JsonObject;
 
 public class ConsoleListener implements ServletContextListener {
 
@@ -87,7 +90,10 @@ public class ConsoleListener implements ServletContextListener {
 
         VertxOptions vertxOpt = new VertxOptions();
         vertx = Vertx.vertx(vertxOpt);
-        vertx.deployVerticle(new AccountServiceVerticle(), ar -> {
+
+        DeploymentOptions deploymentOpts = new DeploymentOptions();
+        deploymentOpts.setConfig(new JsonObject().put("address-local", "local-"+UUID.randomUUID()));
+        vertx.deployVerticle(new AccountServiceVerticle(), deploymentOpts, ar -> {
             if (ar.succeeded()) {
                 LOGGER.info("Verticle {} successfully deployed", AccountServiceVerticle.class.getName());
             } else {
