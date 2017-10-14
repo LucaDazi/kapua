@@ -9,7 +9,7 @@
  * Contributors:
  *     Eurotech - initial API and implementation
  *******************************************************************************/
-package org.eclipse.kapua.service.account.module;
+package org.eclipse.kapua.service.account.module.vertx;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +23,7 @@ import org.eclipse.kapua.service.account.internal.AccountServiceImpl;
 import org.eclipse.kapua.service.account.internal.AccountServiceModule;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Singleton;
 
 public class AccountServiceBinder extends AbstractModule {
 
@@ -36,7 +37,7 @@ public class AccountServiceBinder extends AbstractModule {
 
     @SuppressWarnings("unchecked")
     public <T> Class<T> getExportedClass(String className) {
-        // Safe conversion per contruction of exportedObjects
+        // Safe conversion per construction of exportedObjects
         return (Class<T>) exportedObjects.get(className);
     }
 
@@ -48,10 +49,10 @@ public class AccountServiceBinder extends AbstractModule {
         bind(KapuaServiceModule.class).to(AccountServiceModule.class);
         exportedObjects.put(KapuaServiceModule.class.getName(), AccountServiceModule.class);
 
-        bind(AccountService.class).to(AccountServiceImpl.class);    
+        bind(AccountService.class).to(AccountServiceImpl.class).in(Singleton.class);
         exportedObjects.put(AccountService.class.getName(), AccountService.class);
 
-        bind(AccountFactory.class).to(AccountFactoryImpl.class);
+        bind(AccountFactory.class).to(AccountFactoryImpl.class).in(Singleton.class);;
         exportedObjects.put(AccountFactory.class.getName(), AccountFactory.class);
     } 
 }

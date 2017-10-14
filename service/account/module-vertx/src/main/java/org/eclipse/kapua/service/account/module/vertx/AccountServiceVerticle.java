@@ -9,11 +9,12 @@
  * Contributors:
  *     Eurotech - initial API and implementation
  *******************************************************************************/
-package org.eclipse.kapua.service.account.module;
+package org.eclipse.kapua.service.account.module.vertx;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.kapua.commons.service.module.KapuaServiceLocalType;
 import org.eclipse.kapua.commons.service.module.ServiceDiscoveryUtils;
 import org.eclipse.kapua.service.KapuaServiceModule;
 import org.eclipse.kapua.service.account.AccountFactory;
@@ -51,23 +52,23 @@ public class AccountServiceVerticle extends AbstractVerticle {
 
         String address = this.config().getString("address-local");
         String moduleName = KapuaServiceModule.class.getName();
-        Record moduleRecord = AccountServiceLocalType.createRecord(moduleName, address, new JsonObject());
+        Record moduleRecord = KapuaServiceLocalType.createRecord(moduleName, address, new JsonObject());
         Future<Record> moduleRecordPublishing = ServiceDiscoveryUtils.publish(discovery, moduleRecord);
         publishedRecordFutures.add(moduleRecordPublishing);
 
         String serviceName = AccountService.class.getName();
-        Record serviceRecord = AccountServiceLocalType.createRecord(serviceName, address, new JsonObject());
+        Record serviceRecord = KapuaServiceLocalType.createRecord(serviceName, address, new JsonObject());
         publishedRecordFutures.add(ServiceDiscoveryUtils.publish(discovery, serviceRecord));
 
         String factoryName = AccountFactory.class.getName();
-        Record factoryRecord = AccountServiceLocalType.createRecord(factoryName, address, new JsonObject());
+        Record factoryRecord = KapuaServiceLocalType.createRecord(factoryName, address, new JsonObject());
         publishedRecordFutures.add(ServiceDiscoveryUtils.publish(discovery, factoryRecord));
 
         // Start modules
         moduleRecordPublishing.setHandler(publishResult -> {
             discovery.getRecord(publishedRecord -> {
                 // Search for a matching module record
-                return publishedRecord.getName().equals(moduleName) && publishedRecord.getType().equals(AccountServiceLocalType.TYPE);
+                return publishedRecord.getName().equals(moduleName) && publishedRecord.getType().equals(KapuaServiceLocalType.TYPE);
             }, recordSearchResult -> {
                 // Start the module
                 ServiceDiscoveryUtils.startModule(vertx, discovery, recordSearchResult, AccountServiceModule.class);

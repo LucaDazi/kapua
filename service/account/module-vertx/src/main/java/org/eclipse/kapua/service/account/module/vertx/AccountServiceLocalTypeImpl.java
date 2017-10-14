@@ -9,16 +9,17 @@
  * Contributors:
  *     Eurotech - initial API and implementation
  *******************************************************************************/
-package org.eclipse.kapua.service.account.module;
+package org.eclipse.kapua.service.account.module.vertx;
 
 import org.eclipse.kapua.commons.service.module.AbstractModuleLocalType;
 import org.eclipse.kapua.commons.service.module.AbstractServiceProvider;
+import org.eclipse.kapua.commons.service.module.KapuaServiceLocalType;
 import org.eclipse.kapua.commons.service.module.CommonsBinder;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-public class AccountServiceLocalTypeImpl extends AbstractModuleLocalType implements AccountServiceLocalType {
+public class AccountServiceLocalTypeImpl extends AbstractModuleLocalType implements KapuaServiceLocalType {
 
     private AbstractServiceProvider provider;
 

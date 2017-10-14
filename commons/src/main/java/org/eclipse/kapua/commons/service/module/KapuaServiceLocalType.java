@@ -9,15 +9,15 @@
  * Contributors:
  *     Eurotech - initial API and implementation
  *******************************************************************************/
-package org.eclipse.kapua.service.account.module;
+package org.eclipse.kapua.commons.service.module;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.servicediscovery.Record;
 import io.vertx.servicediscovery.spi.ServiceType;
 
-public interface AccountServiceLocalType extends ServiceType {
+public interface KapuaServiceLocalType extends ServiceType {
 
-    public static String TYPE = "account-service-local";
+    public static String TYPE = "kapua-service-local";
 
     public static Record createRecord(final String serviceName, final String location, final JsonObject metadata) {
         Record record = new Record()
