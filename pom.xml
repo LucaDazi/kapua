@@ -879,6 +879,21 @@
                 <artifactId>kapua-security-certificate-internal</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.eclipse.kapua</groupId>
+                <artifactId>kapua-connector</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.kapua</groupId>
+                <artifactId>kapua-connector-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.kapua</groupId>
+                <artifactId>kapua-connector-amqp</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.eclipse.kapua</groupId>
@@ -1241,6 +1256,8 @@
         <module>transport</module>
         <module>translator</module>
         <module>broker-core</module>
+        <module>connector</module>
+
         <module>test</module>
         <module>qa</module>
         <module>qa-steps</module>
