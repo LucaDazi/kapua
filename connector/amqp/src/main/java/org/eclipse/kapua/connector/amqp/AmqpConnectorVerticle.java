@@ -11,54 +11,56 @@
  *******************************************************************************/
 package org.eclipse.kapua.connector.amqp;
 
+import java.util.HashMap;
+import java.util.Map;
 
+import org.apache.qpid.proton.amqp.Binary;
+import org.apache.qpid.proton.amqp.messaging.AmqpValue;
+import org.apache.qpid.proton.amqp.messaging.Data;
+import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.message.Message;
-import org.eclipse.kapua.KapuaException;
+import org.eclipse.kapua.KapuaErrorCodes;
 import org.eclipse.kapua.connector.AbstractConnectorVerticle;
+import org.eclipse.kapua.connector.Converter;
 import org.eclipse.kapua.connector.KapuaConnectorException;
-import org.eclipse.kapua.connector.TelemetryProvider;
-import org.eclipse.kapua.connector.Utility;
+import org.eclipse.kapua.connector.Processor;
 import org.eclipse.kapua.connector.amqp.settings.ConnectorSettings;
 import org.eclipse.kapua.connector.amqp.settings.ConnectorSettingsKey;
-import org.eclipse.kapua.locator.KapuaLocator;
+import org.eclipse.kapua.message.transport.KapuaTransportMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.proton.ProtonClient;
 import io.vertx.proton.ProtonConnection;
 import io.vertx.proton.ProtonDelivery;
-import io.vertx.proton.ProtonMessageHandler;
 
-public class AmqpConnectorVerticle extends AbstractConnectorVerticle {
+public class AmqpConnectorVerticle extends AbstractConnectorVerticle<byte[], KapuaTransportMessage> {
 
     protected final static Logger logger = LoggerFactory.getLogger(AmqpConnectorVerticle.class);
 
+    // TODO: Make this parametrizable
     private final static String QUEUE_PATTERN = "Consumer.%s.VirtualTopic.>";// Consumer.*.VirtualTopic.>
 
     private ProtonClient client;
+    private ProtonConnection connection;
 
     // providers
-    private MessageHandler messageHandler;
-    private ConnectionHandler connectionHandler;
     private String brokerName;
     private int brokerPort;
 
-    public AmqpConnectorVerticle() {
-        logger.info("Initializing providers...");
-        logger.info("             telemetry provider...");
+    public AmqpConnectorVerticle(Converter<byte[], KapuaTransportMessage> converter, Processor<KapuaTransportMessage> processor) {
+        super(converter, processor);
+
         brokerName = ConnectorSettings.getInstance().getString(ConnectorSettingsKey.BROKER_NAME);
         brokerPort = ConnectorSettings.getInstance().getInt(ConnectorSettingsKey.BROKER_PORT);
-        messageHandler = new MessageHandler();
-        connectionHandler = new ConnectionHandler(brokerName, brokerPort);
-        telemetryProvider = KapuaLocator.getInstance().getService(TelemetryProvider.class);
-        logger.info("             telemetry provider... DONE");
-        logger.info("Initializing providers... DONE");
     }
 
     @Override
-    public void start() throws Exception {
+    public void start() throws KapuaConnectorException {
+        // make sure connection is already closed
+        closeConnection();
+
         logger.info("Connectong to broker {}:{}...", brokerName, brokerPort);
         client = ProtonClient.create(vertx);
         client.connect(
@@ -66,71 +68,100 @@ public class AmqpConnectorVerticle extends AbstractConnectorVerticle {
                 brokerPort,
                 ConnectorSettings.getInstance().getString(ConnectorSettingsKey.BROKER_USERNAME),
                 ConnectorSettings.getInstance().getString(ConnectorSettingsKey.BROKER_PASSWORD),
-                connectionHandler);
+                this::handleProtonConnection);
+
+        // invoking superclass start
+        super.start();
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() throws KapuaConnectorException {
+
+        logger.info("Closing broker connection...");
+        closeConnection();
+
+        // invoking superclass start
+        super.stop();
+    }
+
+    private void closeConnection() {
+        if (connection != null) {
+            connection.close();
+            connection = null;
+        }
     }
 
     private void registerConsumer(ProtonConnection connection) {
+
         String queue = String.format(QUEUE_PATTERN,
                 ConnectorSettings.getInstance().getString(ConnectorSettingsKey.BROKER_CLIENT_ID));
         logger.info("Register consumer for queue {}...", queue);
         connection.open();
+        this.connection = connection;
+
         // The client ID is set implicitly into the queue subscribed
-        connection.createReceiver(queue).handler(messageHandler).open();
+        connection.createReceiver(queue).handler(this::handleProtonMessage).open();
         logger.info("Register consumer for queue {}... DONE", queue);
     }
 
-    private void forwardMessageToKafka(byte[] data) {
+    /**
+     * Callback for Connection Handler implementing interface Handler<AsyncResult<ProtonConnection>> 
+     * @param event
+     */
+    public void handleProtonConnection(AsyncResult<ProtonConnection> event) {
+        if (event.succeeded()) {
+            // register the message consumer
+            logger.info("Connecting to broker {}:{}... Creating receiver...", brokerName, brokerPort);
+            registerConsumer(event.result());
+            logger.info("Connecting to broker {}:{}... Creating receiver... DONE", brokerName, brokerPort);
+        } else {
+            logger.error("Cannot register kafka consumer! ", event.cause().getCause());
+        }
+    }
+
+    /**
+     * Callback for Proton Message receiver implementing interface ProtonMessageHandler
+     * @param delivery
+     * @param message
+     */
+    public void handleProtonMessage(ProtonDelivery delivery, Message message) {
         try {
-            telemetryProvider.sendSynchronous(Utility.convertFromByte(data));
-        } catch (KapuaException e) {
-            logger.error("Cannot convert recevived message to KapuaMessage! Error: {}", e.getMessage(), e);
+
+            // build the message properties
+            Map<String,Object> convertedMsgProperties = new HashMap<String,Object>();
+            for (String propName : message.getApplicationProperties().getValue().keySet()) {
+                logger.info("Incoming message proerpties: {} : {}", propName, message.getApplicationProperties().getValue().get(propName));
+            }
+
+            // process the incoming message
+            byte[] messageBody = extractBytePayload(message.getBody());
+            super.handleMessage(convertedMsgProperties, messageBody);
+        } 
+        catch (KapuaConnectorException e) {
+            // DO nothing
+            logger.warn("Error sending message to kafka: {}", e.getMessage(), e);
         }
+        // By default, the receiver automatically accepts (and settles) the delivery
+        // when the handler returns, if no other disposition has been applied.
+        // To change this and always manage dispositions yourself, use the
+        // setAutoAccept method on the receiver.
     }
 
-    private class MessageHandler implements ProtonMessageHandler {
 
-        @Override
-        public void handle(ProtonDelivery delivery, Message message) {
-            try {
-                forwardMessageToKafka(Utility.extractBytePayload(message.getBody()));
-            }
-            catch (KapuaConnectorException e) {
-                //DO nothing
-                logger.warn("Error sending message to kafka: {}", e.getMessage(), e);
-            }
-            // By default, the receiver automatically accepts (and settles) the delivery
-            // when the handler returns, if no other disposition has been applied.
-            // To change this and always manage dispositions yourself, use the
-            // setAutoAccept method on the receiver.
+    private static byte[] extractBytePayload(Section body) throws KapuaConnectorException {
+        logger.info("Received message with body: {}", body);
+        if (body instanceof Data) {
+            Binary data = ((Data) body).getValue();
+            logger.info("Received DATA message");
+            return data.getArray();
+        } else if (body instanceof AmqpValue) {
+            String content = (String) ((AmqpValue) body).getValue();
+            logger.info("Received message with content: {}", content);
+            return content.getBytes();
+        } else {
+            logger.warn("Recevide message with unknown message type! ({})", body != null ? body.getClass() : "NULL");
+            // TODO use custom exception
+            throw new KapuaConnectorException(KapuaErrorCodes.INTERNAL_ERROR);
         }
-
-    }
-
-    private class ConnectionHandler implements Handler<AsyncResult<ProtonConnection>> {
-
-        private String brokerName;
-        private int brokerPort;
-
-        public ConnectionHandler(String brokerName, int brokerPort) {
-            this.brokerName = brokerName;
-            this.brokerPort = brokerPort;
-        }
-
-        @Override
-        public void handle(AsyncResult<ProtonConnection> event) {
-            if (event.succeeded()) {
-                // register the message consumer
-                logger.info("Connecting to broker {}:{}... Creating receiver...", brokerName, brokerPort);
-                registerConsumer(event.result());
-                logger.info("Connecting to broker {}:{}... Creating receiver... DONE", brokerName, brokerPort);
-            } else {
-                logger.error("Cannot register kafka consumer! ", event.cause().getCause());
-            }
-        }
-
     }
 }
