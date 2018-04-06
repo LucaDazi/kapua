@@ -13,24 +13,30 @@ package org.eclipse.kapua.connector;
 
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.vertx.core.AbstractVerticle;
 
 public abstract class AbstractConnectorVerticle<S,T> extends AbstractVerticle {
 
-    private Converter<S,T> converter;
-    private Processor<T> processor;
+    protected final static Logger logger = LoggerFactory.getLogger(AbstractConnectorVerticle.class);
 
-    AbstractConnectorVerticle(Converter<S,T> converter,
+    protected Converter<S,T> converter;
+    protected Processor<T> processor;
+
+    protected AbstractConnectorVerticle(Converter<S,T> converter,
             Processor<T> processor) {
         this.converter = converter;
         this.processor = processor;
     }
 
-    AbstractConnectorVerticle(Processor<T> processor) {
+    protected AbstractConnectorVerticle(Processor<T> processor) {
         this(null, processor);
     }
 
-    public void start() throws Exception {
+    public void start() throws KapuaConnectorException {
+        logger.info("Invoking processor.start...");
         processor.start();
     }
 
@@ -47,7 +53,8 @@ public abstract class AbstractConnectorVerticle<S,T> extends AbstractVerticle {
         processor.process(convertedMessage);
     }
 
-    public void stop() throws Exception {
+    public void stop() throws KapuaConnectorException {
+        logger.info("Invoking processor.stop...");
         processor.stop();
     }
 }
