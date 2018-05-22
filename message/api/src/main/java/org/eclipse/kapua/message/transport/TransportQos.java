@@ -11,17 +11,9 @@
  *******************************************************************************/
 package org.eclipse.kapua.message.transport;
 
-import org.eclipse.kapua.message.KapuaChannel;
-import org.eclipse.kapua.message.xml.MessageXmlRegistry;
 
-import javax.xml.bind.annotation.XmlType;
-
-/**
- * Kapua data message channel object definition.
- * 
- * @since 1.0
- *
- */
-@XmlType(factoryClass = MessageXmlRegistry.class, factoryMethod = "newKapuaDataChannel")
-public interface KapuaTransportChannel extends KapuaChannel {
+public enum TransportQos {
+    AT_MOST_ONCE,
+    AT_LEAST_ONCE,
+    EXACTLY_ONCE;
 }

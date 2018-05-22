@@ -26,7 +26,7 @@ import org.eclipse.kapua.connector.KapuaConnectorException;
 import org.eclipse.kapua.connector.Processor;
 import org.eclipse.kapua.connector.amqp.settings.ConnectorSettings;
 import org.eclipse.kapua.connector.amqp.settings.ConnectorSettingsKey;
-import org.eclipse.kapua.message.transport.KapuaTransportMessage;
+import org.eclipse.kapua.message.transport.TransportMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +35,7 @@ import io.vertx.proton.ProtonClient;
 import io.vertx.proton.ProtonConnection;
 import io.vertx.proton.ProtonDelivery;
 
-public class AmqpConnectorVerticle extends AbstractConnectorVerticle<byte[], KapuaTransportMessage> {
+public class AmqpConnectorVerticle extends AbstractConnectorVerticle<byte[], TransportMessage> {
 
     protected final static Logger logger = LoggerFactory.getLogger(AmqpConnectorVerticle.class);
 
@@ -49,7 +49,7 @@ public class AmqpConnectorVerticle extends AbstractConnectorVerticle<byte[], Kap
     private String brokerName;
     private int brokerPort;
 
-    public AmqpConnectorVerticle(Converter<byte[], KapuaTransportMessage> converter, Processor<KapuaTransportMessage> processor) {
+    public AmqpConnectorVerticle(Converter<byte[], TransportMessage> converter, Processor<TransportMessage> processor) {
         super(converter, processor);
 
         brokerName = ConnectorSettings.getInstance().getString(ConnectorSettingsKey.BROKER_NAME);

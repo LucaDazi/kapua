@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018 Eurotech and/or its affiliates and others
+ * Copyright (c) 2011, 2016 Eurotech and/or its affiliates and others
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -9,19 +9,25 @@
  * Contributors:
  *     Eurotech - initial API and implementation
  *******************************************************************************/
-package org.eclipse.kapua.message.internal.transport;
+package org.eclipse.kapua.connector;
 
-import org.eclipse.kapua.message.internal.KapuaPayloadImpl;
-import org.eclipse.kapua.message.transport.KapuaTransportPayload;
+import org.eclipse.kapua.KapuaErrorCode;
 
 /**
- * Kapua data message payload object reference implementation.
+ * Connector error codes.
  * 
  * @since 1.0
  *
  */
-public class KapuaTransportPayloadImpl extends KapuaPayloadImpl implements KapuaTransportPayload {
+public enum ConnectorErrorCodes implements KapuaErrorCode {
+    /**
+     * Message Convertion Error
+     */
+    CONVERTION_ERROR,
 
-    private static final long serialVersionUID = -8252837320395406221L;
+    /**
+     * No topic
+     */
+    CONVERTION_NO_TOPIC
 
 }

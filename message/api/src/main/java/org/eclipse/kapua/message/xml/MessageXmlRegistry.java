@@ -23,6 +23,7 @@ import org.eclipse.kapua.message.KapuaPosition;
 import org.eclipse.kapua.message.device.data.KapuaDataChannel;
 import org.eclipse.kapua.message.device.data.KapuaDataMessage;
 import org.eclipse.kapua.message.device.data.KapuaDataPayload;
+import org.eclipse.kapua.message.transport.TransportMessage;
 
 /**
  * Message XML factory class
@@ -39,6 +40,10 @@ public class MessageXmlRegistry {
 
     public KapuaMessage<?,?> newKapuaMessage() {
         return factory.newMessage();
+    }
+
+    public TransportMessage newTransportMessage() {
+        return factory.newTransportMessage();
     }
 
     public KapuaDataMessage newKapuaDataMessage() {
@@ -60,5 +65,4 @@ public class MessageXmlRegistry {
     public KapuaDataPayload newKapuaDataPayload() {
         return factory.newKapuaDataPayload();
     }
-
 }

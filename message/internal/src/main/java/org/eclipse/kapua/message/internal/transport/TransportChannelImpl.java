@@ -12,7 +12,7 @@
 package org.eclipse.kapua.message.internal.transport;
 
 import org.eclipse.kapua.message.internal.KapuaChannelImpl;
-import org.eclipse.kapua.message.transport.KapuaTransportChannel;
+import org.eclipse.kapua.message.transport.TransportChannel;
 
 /**
  * Kapua data message channel object reference implementation.
@@ -20,8 +20,19 @@ import org.eclipse.kapua.message.transport.KapuaTransportChannel;
  * @since 1.0
  *
  */
-public class KapuaTransportChannelImpl extends KapuaChannelImpl implements KapuaTransportChannel {
+public class TransportChannelImpl extends KapuaChannelImpl implements TransportChannel {
 
-    private static final long serialVersionUID = 3623130565903029541L;
+    private static final long serialVersionUID = -1555858455839592300L;
 
+    private String originalDestination;
+
+    @Override
+    public String getOriginalDestination() {
+        return originalDestination;
+    }
+
+    @Override
+    public void setOriginalDestination(String originalDestination) {
+        this.originalDestination = originalDestination;
+    }
 }

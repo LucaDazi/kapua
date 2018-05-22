@@ -9,14 +9,13 @@
  * Contributors:
  *     Eurotech - initial API and implementation
  *******************************************************************************/
-package org.eclipse.kapua.connector;
+package org.eclipse.kapua.message.transport;
 
-import java.util.Map;
 
-public interface Converter<F,T> {
-
-    public static final String MESSAGE_DESTINATION = new String("message-destination");
-    public static final String MESSAGE_QOS = new String("message-qos");
-
-    public T convert(Map<String,Object> properties, F message) throws KapuaConnectorException;
+public enum TransportMessageType {
+    TELEMETRY,
+    EVENTS,
+    ALERTS,
+    CONTROL,
+    REPLY;
 }

@@ -9,18 +9,13 @@
  * Contributors:
  *     Eurotech - initial API and implementation
  *******************************************************************************/
-package org.eclipse.kapua.connector.converter;
+package org.eclipse.kapua.connector.converter.kura.proto;
 
-import java.util.Map;
+public class KuraInvalidMetricTypeException extends RuntimeException {
 
-import org.eclipse.kapua.connector.Converter;
-import org.eclipse.kapua.message.transport.KapuaTransportMessage;
+    private static final long serialVersionUID = 3811194468467381264L;
 
-public class KuraPayloadConverter implements Converter<byte[],KapuaTransportMessage> {
-
-    @Override
-    public KapuaTransportMessage convert(Map<String, Object> properties, byte[] message) {
-        // TODO Auto-generated method stub
-        return null;
+    public KuraInvalidMetricTypeException(String metricType) {
+        super(metricType);
     }
 }
