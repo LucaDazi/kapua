@@ -9,11 +9,16 @@
  * Contributors:
  *     Eurotech - initial API and implementation
  *******************************************************************************/
-package org.eclipse.kapua.message.transport;
+package org.eclipse.kapua.connector.converter.kura.proto;
 
+/**
+ * @noextend This class is not intended to be subclassed by clients.
+ */
+public class KuraInvalidMessageException extends RuntimeException {
 
-public enum KapuaTransportQos {
-    AT_MOST_ONCE,
-    AT_LEAST_ONCE,
-    EXACTLY_ONCE;
+    private static final long serialVersionUID = -3636897647706575102L;
+
+    public KuraInvalidMessageException(Throwable cause) {
+        super(cause);
+    }
 }

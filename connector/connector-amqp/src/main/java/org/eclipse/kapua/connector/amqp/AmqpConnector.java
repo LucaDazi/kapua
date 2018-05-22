@@ -12,8 +12,8 @@
 package org.eclipse.kapua.connector.amqp;
 
 import org.eclipse.kapua.connector.Processor;
-import org.eclipse.kapua.connector.converter.KuraPayloadConverter;
-import org.eclipse.kapua.message.transport.KapuaTransportMessage;
+import org.eclipse.kapua.connector.converter.kura.KuraPayloadProtoConverter;
+import org.eclipse.kapua.message.transport.TransportMessage;
 
 import io.vertx.core.Vertx;
 
@@ -24,11 +24,17 @@ public class AmqpConnector {
 
     public static void main(String argv[]) {
 
-        KuraPayloadConverter converter = new KuraPayloadConverter();
-        Processor<KapuaTransportMessage> processor = null; // TODO
-        AmqpConnectorVerticle amqpConnVrtcl = new AmqpConnectorVerticle(converter, processor);
-
         Vertx vertx = Vertx.vertx(); // TODO options
+
+        // telemetry
+        KuraPayloadProtoConverter converter = new KuraPayloadProtoConverter();
+        Processor<TransportMessage> processor = null; // TODO add Kafka Processor
+        AmqpConnectorVerticle amqpConnVrtcl = new AmqpConnectorVerticle(converter, processor);
         vertx.deployVerticle(amqpConnVrtcl);
+
+        // events
+
+        // alerts
+
     }
 }

@@ -11,39 +11,30 @@
  *******************************************************************************/
 package org.eclipse.kapua.message.transport;
 
-import javax.xml.bind.annotation.XmlType;
-
-import org.eclipse.kapua.message.KapuaMessage;
+import org.eclipse.kapua.message.KapuaChannel;
 import org.eclipse.kapua.message.xml.MessageXmlRegistry;
 
+import javax.xml.bind.annotation.XmlType;
+
 /**
- * Kapua data message object definition.
- *
+ * Kapua data message channel object definition.
+ * 
  * @since 1.0
  *
  */
-@XmlType(factoryClass = MessageXmlRegistry.class, factoryMethod = "newKapuaDataMessage")
-public interface KapuaTransportMessage extends KapuaMessage<KapuaTransportChannel, KapuaTransportPayload> {
+@XmlType(factoryClass = MessageXmlRegistry.class, factoryMethod = "newTransportChannel")
+public interface TransportChannel extends KapuaChannel {
 
     /**
      * Gets the topic used in the in the transport of the message
+     * 
      * @return
      */
-    public String getTransportTopic();
+    public String getOriginalDestination();
 
     /**
      * Sets the topic used in the in the transport of the message
      */
-    public void setTransportTopic(String transportTopic);
+    public void setOriginalDestination(String originalDestination);
 
-    /**
-     * Gets the qos used in the in the transport of the message
-     * @return
-     */    
-    public KapuaTransportQos getTransportQoS();
-
-    /**
-     * Sets the qos used in the in the transport of the message
-     */
-    public void setTransportQoS(KapuaTransportQos qos);
 }

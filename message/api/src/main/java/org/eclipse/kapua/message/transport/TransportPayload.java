@@ -22,7 +22,7 @@ import javax.xml.bind.annotation.XmlType;
  * @since 1.0
  *
  */
-@XmlType(factoryClass = MessageXmlRegistry.class, factoryMethod = "newKapuaDataPayload")
-public interface KapuaTransportPayload extends KapuaPayload {
+@XmlType(factoryClass = MessageXmlRegistry.class, factoryMethod = "newTransportPayload")
+public interface TransportPayload extends KapuaPayload {
 
 }

@@ -26,6 +26,7 @@
 
     <modules>
         <module>api</module>
+        <module>converter-kura</module>
         <module>connector-amqp</module>
     </modules>
 

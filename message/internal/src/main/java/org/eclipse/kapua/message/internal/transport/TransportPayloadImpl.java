@@ -9,14 +9,19 @@
  * Contributors:
  *     Eurotech - initial API and implementation
  *******************************************************************************/
-package org.eclipse.kapua.connector;
+package org.eclipse.kapua.message.internal.transport;
 
-import java.util.Map;
+import org.eclipse.kapua.message.internal.KapuaPayloadImpl;
+import org.eclipse.kapua.message.transport.TransportPayload;
 
-public interface Converter<F,T> {
+/**
+ * Kapua data message payload object reference implementation.
+ * 
+ * @since 1.0
+ *
+ */
+public class TransportPayloadImpl extends KapuaPayloadImpl implements TransportPayload {
 
-    public static final String MESSAGE_DESTINATION = new String("message-destination");
-    public static final String MESSAGE_QOS = new String("message-qos");
+    private static final long serialVersionUID = -706604329939443359L;
 
-    public T convert(Map<String,Object> properties, F message) throws KapuaConnectorException;
 }
