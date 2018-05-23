@@ -17,7 +17,9 @@ import org.eclipse.kapua.model.id.KapuaId;
 import org.eclipse.kapua.service.device.management.message.request.KapuaRequestChannel;
 import org.eclipse.kapua.service.device.management.message.request.KapuaRequestMessage;
 import org.eclipse.kapua.service.device.management.message.request.KapuaRequestPayload;
+import org.eclipse.kapua.service.device.management.message.response.KapuaResponseChannel;
 import org.eclipse.kapua.service.device.management.message.response.KapuaResponseMessage;
+import org.eclipse.kapua.service.device.management.message.response.KapuaResponsePayload;
 import org.eclipse.kapua.service.device.registry.event.DeviceEventCreator;
 import org.eclipse.kapua.service.device.registry.event.DeviceEventFactory;
 import org.eclipse.kapua.service.device.registry.event.DeviceEventService;
@@ -29,8 +31,8 @@ public abstract class AbstractDeviceManagementServiceImpl {
     private static final DeviceEventService DEVICE_EVENT_SERVICE = LOCATOR.getService(DeviceEventService.class);
     private static final DeviceEventFactory DEVICE_EVENT_FACTORY = LOCATOR.getFactory(DeviceEventFactory.class);
 
-    protected <C extends KapuaRequestChannel, P extends KapuaRequestPayload> void createDeviceEvent(KapuaId scopeId, KapuaId deviceId, KapuaRequestMessage<C, P> requestMessage,
-            KapuaResponseMessage responseMessage) throws KapuaException {
+    protected <C extends KapuaRequestChannel, P extends KapuaRequestPayload, RC extends KapuaResponseChannel, RP extends KapuaResponsePayload> void createDeviceEvent(KapuaId scopeId, KapuaId deviceId, KapuaRequestMessage<C, P> requestMessage,
+            KapuaResponseMessage<RC,RP> responseMessage) throws KapuaException {
 
         DeviceEventCreator deviceEventCreator =
                 DEVICE_EVENT_FACTORY.newCreator(
