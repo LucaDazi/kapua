@@ -40,19 +40,19 @@ public class AmqpConnectorVerticle extends AbstractConnectorVerticle<byte[], Tra
     protected final static Logger logger = LoggerFactory.getLogger(AmqpConnectorVerticle.class);
 
     // TODO: Make this parametrizable
-    private final static String QUEUE_PATTERN = "Consumer.%s.VirtualTopic.>";// Consumer.*.VirtualTopic.>
+    private final static String QUEUE_PATTERN = "queue://Consumer.%s.VirtualTopic.>";// Consumer.*.VirtualTopic.>
 
     private ProtonClient client;
     private ProtonConnection connection;
 
     // providers
-    private String brokerName;
+    private String brokerHost;
     private int brokerPort;
 
     public AmqpConnectorVerticle(Converter<byte[], TransportMessage> converter, Processor<TransportMessage> processor) {
         super(converter, processor);
 
-        brokerName = ConnectorSettings.getInstance().getString(ConnectorSettingsKey.BROKER_NAME);
+        brokerHost = ConnectorSettings.getInstance().getString(ConnectorSettingsKey.BROKER_HOST);
         brokerPort = ConnectorSettings.getInstance().getInt(ConnectorSettingsKey.BROKER_PORT);
     }
 
@@ -61,15 +61,16 @@ public class AmqpConnectorVerticle extends AbstractConnectorVerticle<byte[], Tra
         // make sure connection is already closed
         closeConnection();
 
-        logger.info("Connectong to broker {}:{}...", brokerName, brokerPort);
+        logger.info("Connecting to broker {}:{}...", brokerHost, brokerPort);
         client = ProtonClient.create(vertx);
         client.connect(
-                brokerName,
+                brokerHost,
                 brokerPort,
                 ConnectorSettings.getInstance().getString(ConnectorSettingsKey.BROKER_USERNAME),
                 ConnectorSettings.getInstance().getString(ConnectorSettingsKey.BROKER_PASSWORD),
                 this::handleProtonConnection);
 
+        logger.info("Connecting to broker {}:{}... Done.", brokerHost, brokerPort);
         // invoking superclass start
         super.start();
     }
@@ -111,9 +112,9 @@ public class AmqpConnectorVerticle extends AbstractConnectorVerticle<byte[], Tra
     public void handleProtonConnection(AsyncResult<ProtonConnection> event) {
         if (event.succeeded()) {
             // register the message consumer
-            logger.info("Connecting to broker {}:{}... Creating receiver...", brokerName, brokerPort);
+            logger.info("Connecting to broker {}:{}... Creating receiver...", brokerHost, brokerPort);
             registerConsumer(event.result());
-            logger.info("Connecting to broker {}:{}... Creating receiver... DONE", brokerName, brokerPort);
+            logger.info("Connecting to broker {}:{}... Creating receiver... DONE", brokerHost, brokerPort);
         } else {
             logger.error("Cannot register kafka consumer! ", event.cause().getCause());
         }
@@ -125,6 +126,7 @@ public class AmqpConnectorVerticle extends AbstractConnectorVerticle<byte[], Tra
      * @param message
      */
     public void handleProtonMessage(ProtonDelivery delivery, Message message) {
+        logger.info("handleProtonMessage...");
         try {
 
             // build the message properties
@@ -138,9 +140,9 @@ public class AmqpConnectorVerticle extends AbstractConnectorVerticle<byte[], Tra
             super.handleMessage(convertedMsgProperties, messageBody);
         } 
         catch (KapuaConnectorException e) {
-            // DO nothing
-            logger.warn("Error sending message to kafka: {}", e.getMessage(), e);
+            logger.warn("Error processing message: "+e.getMessage(), e);
         }
+
         // By default, the receiver automatically accepts (and settles) the delivery
         // when the handler returns, if no other disposition has been applied.
         // To change this and always manage dispositions yourself, use the

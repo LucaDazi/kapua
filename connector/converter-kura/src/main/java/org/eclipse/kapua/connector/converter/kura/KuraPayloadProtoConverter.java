@@ -65,7 +65,7 @@ public class KuraPayloadProtoConverter implements Converter<byte[], TransportMes
         }
 
         // scopeName, clientId, originalDestination, semanticParts
-        processTransportTopic(transportMessage, transportTopic);
+        //processTransportTopic(transportMessage, transportTopic);
 
         // Qos
         String transportQosProp = (String) properties.get(Converter.MESSAGE_QOS);

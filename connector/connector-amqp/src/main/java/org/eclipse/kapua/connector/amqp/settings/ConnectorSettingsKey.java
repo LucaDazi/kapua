@@ -23,7 +23,7 @@ public enum ConnectorSettingsKey implements SettingKey {
     /**
      * Broker name (or ip)
      */
-    BROKER_NAME("broker.name"),
+    BROKER_HOST("broker.host"),
     /**
      * Broker url
      */
