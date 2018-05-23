@@ -38,7 +38,7 @@ import org.eclipse.kapua.message.xml.MessageXmlRegistry;
         "receivedOn", //
         "position", //
         "channel", //
-        "payload", //
+        "payload" //
 }, factoryClass = MessageXmlRegistry.class, factoryMethod = "newTransportMessage") 
 public interface TransportMessage extends Message<TransportChannel, TransportPayload> {
 
@@ -140,6 +140,4 @@ public interface TransportMessage extends Message<TransportChannel, TransportPay
      * @param position
      */
     public void setPosition(KapuaPosition position);
-
-
 }
