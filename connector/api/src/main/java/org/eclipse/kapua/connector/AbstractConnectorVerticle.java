@@ -11,8 +11,6 @@
  *******************************************************************************/
 package org.eclipse.kapua.connector;
 
-import java.util.Map;
-
 import io.vertx.core.Future;
 
 import org.eclipse.kapua.converter.Converter;
@@ -24,20 +22,31 @@ import org.slf4j.LoggerFactory;
 
 import io.vertx.core.AbstractVerticle;
 
-public abstract class AbstractConnectorVerticle<S,T> extends AbstractVerticle {
+/**
+ * 
+ * @param <T> Transport message type
+ * @param <A> Application message type
+ * @param <P> Processor message type
+ */
+public abstract class AbstractConnectorVerticle<T, A, P> extends AbstractVerticle {
 
     protected final static Logger logger = LoggerFactory.getLogger(AbstractConnectorVerticle.class);
 
-    protected Converter<S,T> converter;
-    protected Processor<T> processor;
+    protected Converter<T, A> transportConverter;
+    protected Converter<A, P> applicationConverter;
+    protected Processor<P> processor;
 
-    protected AbstractConnectorVerticle(Converter<S,T> converter,
-            Processor<T> processor) {
-        this.converter = converter;
+    protected AbstractConnectorVerticle(Converter<T, A> transportConverter, Converter<A, P> applicationConverter, Processor<P> processor) {
+        this.transportConverter = transportConverter;
+        this.applicationConverter = applicationConverter;
         this.processor = processor;
     }
 
-    protected AbstractConnectorVerticle(Processor<T> processor) {
+    protected AbstractConnectorVerticle(Converter<A, P> applicationConverter, Processor<P> processor) {
+         this(null, applicationConverter, processor);
+    }
+
+    protected AbstractConnectorVerticle(Processor<P> processor) {
         this(null, processor);
     }
 
@@ -62,13 +71,19 @@ public abstract class AbstractConnectorVerticle<S,T> extends AbstractVerticle {
     }
 
     @SuppressWarnings("unchecked")
-    public void handleMessage(Map<String,Object> properties, S message) throws KapuaConnectorException, KapuaConverterException, KapuaProcessorException {
-
-        T convertedMessage = null;
-        if (converter != null) {
-            convertedMessage = converter.convert(properties, message);
+    protected void handleMessage(MessageContext<T> message) throws KapuaConnectorException, KapuaConverterException, KapuaProcessorException {
+        MessageContext<A> applicationMessage = null;
+        if (transportConverter != null) {
+            applicationMessage = transportConverter.convert(message);
+        }
+        else {
+            applicationMessage = (MessageContext<A>) message;
+        }
+        MessageContext<P> convertedMessage = null;
+        if (applicationConverter != null) {
+            convertedMessage = applicationConverter.convert(applicationMessage);
         } else {
-            convertedMessage = (T) message;
+            convertedMessage = (MessageContext<P>) applicationMessage;
         }
 
         processor.process(convertedMessage);

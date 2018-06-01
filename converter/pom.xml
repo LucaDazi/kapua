@@ -26,6 +26,10 @@
 
     <modules>
         <module>api</module>
+        <!-- transport layer converters -->
+        <module>activemq</module>
+        <module>hono</module>
+        <!-- application layer converters -->
         <module>kura</module>
     </modules>
 

@@ -19,33 +19,17 @@ import org.eclipse.kapua.commons.setting.SettingKey;
 public enum EclipseiotSettingKey implements SettingKey {
 
     /**
-     * Hono connection configuration - username
+     * Verticle class implementation to instantiate
      */
-    HONO_USERNAME("eclipseiot.hono.username"),
+    VERTICLE_CLASS_NAME("eclipseiot.verticle.class"),
     /**
-     * Hono connection configuration - password
+     * Transport converter class
      */
-    HONO_PASSWORD("eclipseiot.hono.password"),
+    TRANSPORT_CONVERTER_CLASS_NAME("eclipseiot.converter.transport.class"),
     /**
-     * Hono connection configuration - tenant id (comma separated tenant id list)
+     * Application converter class
      */
-    HONO_TENANT_ID("eclipseiot.hono.tenant_id"),
-    /**
-     * Hono connection configuration - host
-     */
-    HONO_HOST("eclipseiot.hono.host"),
-    /**
-     * Hono connection configuration - port
-     */
-    HONO_PORT("eclipseiot.hono.port"),
-    /**
-     * Hono connection configuration - trutstore file
-     */
-    HONO_TRUSTSTORE_FILE("eclipseiot.hono.truststore_file"),
-    /**
-     * Converter class
-     */
-    CONVERTER_CLASS_NAME("eclipseiot.converter.class"),
+    APPLICATION_CONVERTER_CLASS_NAME("eclipseiot.converter.application.class"),
     /**
      * Processor class
      */

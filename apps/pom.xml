@@ -24,7 +24,6 @@
     <artifactId>kapua-apps</artifactId>
 
     <modules>
-        <module>amqp</module>
         <module>eclipseiot</module>
     </modules>
 </project>
