@@ -12,6 +12,7 @@
 package org.eclipse.kapua.connector;
 
 import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 
 import org.eclipse.kapua.converter.Converter;
 import org.eclipse.kapua.converter.KapuaConverterException;
@@ -20,8 +21,6 @@ import org.eclipse.kapua.processor.Processor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.vertx.core.AbstractVerticle;
-
 /**
  * Abstract connector to be customized with specific server connection code.<br>
  * The incoming message will flow through the converter (if provided) and the processor
@@ -29,10 +28,11 @@ import io.vertx.core.AbstractVerticle;
  * @param <M> Message type (optional)
  * @param <P> Processor message type
  */
-public abstract class AbstractConnector<M, P> extends AbstractVerticle {
+public abstract class AbstractConnector<M, P> {
 
     protected final static Logger logger = LoggerFactory.getLogger(AbstractConnector.class);
 
+    protected Vertx vertx;
     protected Converter<M, P> converter;
     protected Processor<P> processor;
 
