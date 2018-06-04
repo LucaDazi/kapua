@@ -23,13 +23,9 @@ public enum EclipseiotSettingKey implements SettingKey {
      */
     VERTICLE_CLASS_NAME("eclipseiot.verticle.class"),
     /**
-     * Transport converter class
+     * Converter class
      */
-    TRANSPORT_CONVERTER_CLASS_NAME("eclipseiot.converter.transport.class"),
-    /**
-     * Application converter class
-     */
-    APPLICATION_CONVERTER_CLASS_NAME("eclipseiot.converter.application.class"),
+    CONVERTER_CLASS_NAME("eclipseiot.converter.class"),
     /**
      * Processor class
      */

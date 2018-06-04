@@ -12,9 +12,12 @@
 package org.eclipse.kapua.connector.activemq;
 
 import io.vertx.core.Future;
-import org.apache.qpid.proton.message.Message;
 
-import org.eclipse.kapua.connector.AbstractConnectorVerticle;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.qpid.proton.message.Message;
+import org.eclipse.kapua.connector.AmqpAbstractConnector;
 import org.eclipse.kapua.connector.KapuaConnectorException;
 import org.eclipse.kapua.connector.MessageContext;
 import org.eclipse.kapua.connector.activemq.settings.ConnectorActiveMQSettings;
@@ -22,6 +25,8 @@ import org.eclipse.kapua.connector.activemq.settings.ConnectorActiveMQSettingsKe
 import org.eclipse.kapua.converter.Converter;
 import org.eclipse.kapua.converter.KapuaConverterException;
 import org.eclipse.kapua.message.transport.TransportMessage;
+import org.eclipse.kapua.message.transport.TransportMessageType;
+import org.eclipse.kapua.message.transport.TransportQos;
 import org.eclipse.kapua.processor.KapuaProcessorException;
 import org.eclipse.kapua.processor.Processor;
 import org.slf4j.Logger;
@@ -32,21 +37,27 @@ import io.vertx.proton.ProtonClient;
 import io.vertx.proton.ProtonConnection;
 import io.vertx.proton.ProtonDelivery;
 
-public class AmqpActiveMQConnectorVerticle extends AbstractConnectorVerticle<Message, byte[], TransportMessage> {
+/**
+ * Amqp ActiveMQ connector implementation
+ *
+ */
+public class AmqpActiveMQConnector extends AmqpAbstractConnector<TransportMessage> {
 
-    protected final static Logger logger = LoggerFactory.getLogger(AmqpActiveMQConnectorVerticle.class);
+    protected final static Logger logger = LoggerFactory.getLogger(AmqpActiveMQConnector.class);
 
-    private final static String QUEUE_PATTERN = "queue://Consumer.%s.VirtualTopic.>";// Consumer.*.VirtualTopic.>
+    private final static String ACTIVEMQ_QOS = "ActiveMQ.MQTT.QoS";
+    private final static String VIRTUAL_TOPIC_PREFIX = "topic://VirtualTopic.";
+    private final static int VIRTUAL_TOPIC_PREFIX_LENGTH = VIRTUAL_TOPIC_PREFIX.length();
+    private final static String QUEUE_PATTERN = "queue://Consumer.%s.VirtualTopic.>";
 
     private ProtonClient client;
     private ProtonConnection connection;
 
-    // providers
     private String brokerHost;
     private int brokerPort;
 
-    public AmqpActiveMQConnectorVerticle(Converter<Message, byte[]> transportConverter, Converter<byte[], TransportMessage> applicationConverter, Processor<TransportMessage> processor) {
-        super(transportConverter, applicationConverter, processor);
+    public AmqpActiveMQConnector(Converter<byte[], TransportMessage> converter, Processor<TransportMessage> processor) {
+        super(converter, processor);
 
         brokerHost = ConnectorActiveMQSettings.getInstance().getString(ConnectorActiveMQSettingsKey.BROKER_HOST);
         brokerPort = ConnectorActiveMQSettings.getInstance().getInt(ConnectorActiveMQSettingsKey.BROKER_PORT);
@@ -118,12 +129,48 @@ public class AmqpActiveMQConnectorVerticle extends AbstractConnectorVerticle<Mes
      * @param delivery
      * @param message
      */
-    public void handleInternalMessage(ProtonDelivery delidddvery, Message message) {
+    public void handleInternalMessage(ProtonDelivery delivery, Message message) {
         try {
             super.handleMessage(new MessageContext<Message>(message));
         } catch (KapuaConnectorException | KapuaConverterException | KapuaProcessorException e) {
             logger.error("Exception while processing message: {}", e.getMessage(), e);
         }
+    }
+
+    @Override
+    protected Map<String, Object> getMessageParameters(Message message) throws KapuaConverterException {
+        Map<String, Object> parameters = new HashMap<>();
+        // extract original MQTT topic
+        String mqttTopic = message.getProperties().getTo(); // topic://VirtualTopic.kapua-sys.02:42:AC:11:00:02.heater.data
+        mqttTopic = mqttTopic.substring(VIRTUAL_TOPIC_PREFIX_LENGTH);
+        mqttTopic = mqttTopic.replace(".", "/");
+        // process prefix and extract message type
+        // FIXME: pluggable message types and dialects
+        if ("$EDC".equals(mqttTopic)) {
+            parameters.put(Converter.MESSAGE_TYPE, TransportMessageType.CONTROL);
+            mqttTopic = mqttTopic.substring("$EDC".length());
+        } else {
+            parameters.put(Converter.MESSAGE_TYPE, TransportMessageType.TELEMETRY);
+        }
+        parameters.put(Converter.MESSAGE_DESTINATION, mqttTopic);
+
+        // extract the original QoS
+        Object activeMqQos = message.getApplicationProperties().getValue().get(ACTIVEMQ_QOS);
+        if (activeMqQos != null && activeMqQos instanceof Integer) {
+            int activeMqQosInt = (int) activeMqQos;
+            switch (activeMqQosInt) {
+            case 0:
+                parameters.put(Converter.MESSAGE_QOS, TransportQos.AT_MOST_ONCE);
+                break;
+            case 1:
+                parameters.put(Converter.MESSAGE_QOS, TransportQos.AT_LEAST_ONCE);
+                break;
+            case 2:
+                parameters.put(Converter.MESSAGE_QOS, TransportQos.EXACTLY_ONCE);
+                break;
+            }
+        }
+        return parameters;
     }
 
 }

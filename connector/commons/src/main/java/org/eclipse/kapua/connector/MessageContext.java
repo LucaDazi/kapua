@@ -14,6 +14,11 @@ package org.eclipse.kapua.connector;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Message context
+ *
+ * @param <M> message type
+ */
 public class MessageContext<M> {
 
     private M message;

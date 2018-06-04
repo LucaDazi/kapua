@@ -23,36 +23,58 @@ import org.slf4j.LoggerFactory;
 import io.vertx.core.AbstractVerticle;
 
 /**
+ * Abstract connector to be customized with specific server connection code.<br>
+ * The incoming message will flow through the converter (if provided) and the processor
  * 
- * @param <T> Transport message type
- * @param <A> Application message type
+ * @param <M> Message type (optional)
  * @param <P> Processor message type
  */
-public abstract class AbstractConnectorVerticle<T, A, P> extends AbstractVerticle {
+public abstract class AbstractConnector<M, P> extends AbstractVerticle {
 
-    protected final static Logger logger = LoggerFactory.getLogger(AbstractConnectorVerticle.class);
+    protected final static Logger logger = LoggerFactory.getLogger(AbstractConnector.class);
 
-    protected Converter<T, A> transportConverter;
-    protected Converter<A, P> applicationConverter;
+    protected Converter<M, P> converter;
     protected Processor<P> processor;
 
-    protected AbstractConnectorVerticle(Converter<T, A> transportConverter, Converter<A, P> applicationConverter, Processor<P> processor) {
-        this.transportConverter = transportConverter;
-        this.applicationConverter = applicationConverter;
+    /**
+     * Default protected constructor
+     * @param converter message converter instance
+     * @param processor message processor instance
+     */
+    protected AbstractConnector(Converter<M, P> converter, Processor<P> processor) {
+        this.converter = converter;
         this.processor = processor;
     }
 
-    protected AbstractConnectorVerticle(Converter<A, P> applicationConverter, Processor<P> processor) {
-         this(null, applicationConverter, processor);
-    }
-
-    protected AbstractConnectorVerticle(Processor<P> processor) {
+    /**
+     * Constructor with no message converter
+     * @param processor
+     */
+    protected AbstractConnector(Processor<P> processor) {
         this(null, processor);
     }
 
+    /**
+     * Internal components start hook
+     * @param startFuture
+     * @throws KapuaConnectorException
+     */
     protected abstract void startInternal(Future<Void> startFuture) throws KapuaConnectorException;
 
+    /**
+     * Internal components stop hook
+     * @param stopFuture
+     * @throws KapuaConnectorException
+     */
     protected abstract void stopInternal(Future<Void> stopFuture) throws KapuaConnectorException;
+
+    /**
+     * 
+     * @param message
+     * @return
+     * @throws KapuaConverterException
+     */
+    protected abstract MessageContext<M> convert(MessageContext<?> message) throws KapuaConverterException;
 
     public void start(Future<Void> startFuture) throws KapuaConnectorException {
         try {
@@ -71,19 +93,13 @@ public abstract class AbstractConnectorVerticle<T, A, P> extends AbstractVerticl
     }
 
     @SuppressWarnings("unchecked")
-    protected void handleMessage(MessageContext<T> message) throws KapuaConnectorException, KapuaConverterException, KapuaProcessorException {
-        MessageContext<A> applicationMessage = null;
-        if (transportConverter != null) {
-            applicationMessage = transportConverter.convert(message);
-        }
-        else {
-            applicationMessage = (MessageContext<A>) message;
-        }
+    protected void handleMessage(MessageContext<?> message) throws KapuaConnectorException, KapuaConverterException, KapuaProcessorException {
+        MessageContext<M> msg = convert(message);
         MessageContext<P> convertedMessage = null;
-        if (applicationConverter != null) {
-            convertedMessage = applicationConverter.convert(applicationMessage);
+        if (converter != null) {
+            convertedMessage = converter.convert(msg);
         } else {
-            convertedMessage = (MessageContext<P>) applicationMessage;
+            convertedMessage = (MessageContext<P>) msg;
         }
 
         processor.process(convertedMessage);

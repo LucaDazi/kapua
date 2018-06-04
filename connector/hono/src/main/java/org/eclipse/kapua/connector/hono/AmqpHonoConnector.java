@@ -11,7 +11,9 @@
  *******************************************************************************/
 package org.eclipse.kapua.connector.hono;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import org.apache.qpid.proton.amqp.Symbol;
@@ -26,7 +28,7 @@ import org.eclipse.hono.util.MessageTap;
 import org.eclipse.hono.util.TimeUntilDisconnectNotification;
 import org.eclipse.kapua.commons.setting.KapuaSettingException;
 import org.eclipse.kapua.commons.util.KapuaFileUtils;
-import org.eclipse.kapua.connector.AbstractConnectorVerticle;
+import org.eclipse.kapua.connector.AmqpAbstractConnector;
 import org.eclipse.kapua.connector.KapuaConnectorException;
 import org.eclipse.kapua.connector.MessageContext;
 import org.eclipse.kapua.connector.hono.settings.ConnectorHonoSetting;
@@ -34,7 +36,8 @@ import org.eclipse.kapua.connector.hono.settings.ConnectorHonoSettingKey;
 import org.eclipse.kapua.converter.Converter;
 import org.eclipse.kapua.converter.KapuaConverterException;
 import org.eclipse.kapua.message.transport.TransportMessage;
-import org.eclipse.kapua.processor.KapuaProcessorException;
+import org.eclipse.kapua.message.transport.TransportMessageType;
+import org.eclipse.kapua.message.transport.TransportQos;
 import org.eclipse.kapua.processor.Processor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,9 +46,16 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.proton.ProtonClientOptions;
 
-public class AmqpHonoConnectorVerticle extends AbstractConnectorVerticle<Message, byte[], TransportMessage> {
+/**
+ * Amqp Hono connector implementation
+ *
+ */
+public class AmqpHonoConnector extends AmqpAbstractConnector<TransportMessage> {
 
-    protected final static Logger logger = LoggerFactory.getLogger(AmqpHonoConnectorVerticle.class);
+    protected final static Logger logger = LoggerFactory.getLogger(AmqpHonoConnector.class);
+
+    private final static String CONTROL_PREFIX = "c/";
+    private final static String TELEMETRY_PREFIX = "t/";
 
     private String username = ConnectorHonoSetting.getInstance().getString(ConnectorHonoSettingKey.HONO_USERNAME);
     private String password = ConnectorHonoSetting.getInstance().getString(ConnectorHonoSettingKey.HONO_PASSWORD);
@@ -56,8 +66,8 @@ public class AmqpHonoConnectorVerticle extends AbstractConnectorVerticle<Message
 
     private HonoClient honoClient;
 
-    public AmqpHonoConnectorVerticle(Vertx vertx, Converter<Message, byte[]> transportConverter, Converter<byte[], TransportMessage> applicationConverter, Processor<TransportMessage> processor) {
-        super(transportConverter, applicationConverter, processor);
+    public AmqpHonoConnector(Vertx vertx, Converter<byte[], TransportMessage> converter, Processor<TransportMessage> processor) {
+        super(converter, processor);
         this.vertx = vertx;
     }
 
@@ -70,13 +80,16 @@ public class AmqpHonoConnectorVerticle extends AbstractConnectorVerticle<Message
                 logger.error("Hono client - cannot not create telemetry consumer for {}:{} - {}", host, port, result.cause());
             }
         });
-        //TODO how to handle subscription to multiple tenants ids?
+        //TODO handle subscription to multiple tenants ids
         honoClient.connect(getProtonClientOptions()).compose(connectedClient -> {
-                // create the telemetryHandler by using the helper functionality for demultiplexing messages to callbacks
                 final Consumer<Message> telemetryHandler = MessageTap.getConsumer(
                         this::handleTelemetryMessage, this::handleCommandReadinessNotification);
                 Future<MessageConsumer> futureConsumer = connectedClient.createTelemetryConsumer(tenantId.get(0),
-                        telemetryHandler, closeHook -> logger.error("remotely detached consumer link"));
+                        telemetryHandler, closeHook -> {
+                            logger.error("remotely detached consumer link");
+                            //TODO restore connection
+                            }
+                        );
                 if (!startFuture.isComplete()) {
                     startFuture.complete();
                 }
@@ -84,12 +97,12 @@ public class AmqpHonoConnectorVerticle extends AbstractConnectorVerticle<Message
         }).setHandler(consumerFuture.completer());
     }
 
-    private void handleTelemetryMessage(Message message) {
+    private void handleTelemetryMessage(final Message message) {
         logger.info("handleProtonMessage...");
         logTelemetryMessage(message);
         try {
             super.handleMessage(new MessageContext<Message>(message));
-        } catch (KapuaConnectorException | KapuaConverterException | KapuaProcessorException e) {
+        } catch (Exception e) {
             logger.error("Exception while processing message: {}", e.getMessage(), e);
         }
     }
@@ -111,7 +124,7 @@ public class AmqpHonoConnectorVerticle extends AbstractConnectorVerticle<Message
         if (tenantId==null && msg.getMessageAnnotations() != null && msg.getMessageAnnotations().getValue() != null) {
             tenantId = msg.getMessageAnnotations().getValue().get(Symbol.getSymbol("tenant_id")).toString();
         }
-        logger.info("received telemetry message:\n    message id '{}' userId '{}' destination '{}' original destination '{}' adapter '{}' tenant '{}' - device '{}' - content-type '{}' - content {}", 
+        logger.info("received telemetry message:\n\tmessage id '{}' userId '{}' destination '{}' original destination '{}' adapter '{}' tenant '{}' - device '{}' - content-type '{}' - content {}", 
             messageId, userId, to, origAddress, adapter, tenantId, deviceId, msg.getContentType(), ((Data) msg.getBody()).getValue().toString());
     }
 
@@ -135,6 +148,8 @@ public class AmqpHonoConnectorVerticle extends AbstractConnectorVerticle<Message
 
     public ProtonClientOptions getProtonClientOptions() {
         ProtonClientOptions opts = new ProtonClientOptions();
+        opts.setReconnectAttempts(5);
+        opts.setReconnectInterval(5000);
         //TODO do we need to set some parameters?
         return opts;
     }
@@ -148,6 +163,30 @@ public class AmqpHonoConnectorVerticle extends AbstractConnectorVerticle<Message
             }
         }
         );
+    }
+
+    @Override
+    protected Map<String, Object> getMessageParameters(Message message) throws KapuaConverterException {
+        Map<String, Object> parameters = new HashMap<>();
+        // build the message properties
+        // extract original MQTT topic
+        String mqttTopic = (String)message.getApplicationProperties().getValue().get("orig_address");
+        mqttTopic = mqttTopic.replace(".", "/");
+        if (mqttTopic.startsWith(TELEMETRY_PREFIX)) {
+            parameters.put(Converter.MESSAGE_TYPE, TransportMessageType.TELEMETRY);
+            mqttTopic = mqttTopic.substring(TELEMETRY_PREFIX.length());
+        }
+        else if (mqttTopic.startsWith(CONTROL_PREFIX)) {
+            parameters.put(Converter.MESSAGE_TYPE, TransportMessageType.CONTROL);
+            mqttTopic = mqttTopic.substring(CONTROL_PREFIX.length());
+        }
+        //TODO handle alerts, ... messages types
+        parameters.put(Converter.MESSAGE_DESTINATION, mqttTopic);
+
+        // extract the original QoS
+        //TODO
+        parameters.put(Converter.MESSAGE_QOS, TransportQos.AT_MOST_ONCE);
+        return parameters;
     }
 
 }

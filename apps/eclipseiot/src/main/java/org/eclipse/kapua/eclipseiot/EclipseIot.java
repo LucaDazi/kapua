@@ -16,7 +16,7 @@ import java.util.logging.Level;
 import org.eclipse.kapua.KapuaException;
 import org.eclipse.kapua.commons.util.ClassUtil;
 import org.eclipse.kapua.commons.util.xml.XmlUtil;
-import org.eclipse.kapua.connector.AbstractConnectorVerticle;
+import org.eclipse.kapua.connector.AbstractConnector;
 import org.eclipse.kapua.converter.Converter;
 import org.eclipse.kapua.eclipseiot.setting.EclipseiotSetting;
 import org.eclipse.kapua.eclipseiot.setting.EclipseiotSettingKey;
@@ -30,26 +30,27 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 
+/**
+ * 
+ *
+ */
 public class EclipseIot extends AbstractVerticle {
 
     protected final static Logger logger = LoggerFactory.getLogger(EclipseIot.class);
 
     private static final String VERTICLE_CLASS_NAME;
-    private static final String TRANSPORT_CONVERTER_CLASS_NAME;
-    private static final String APPLICATION_CONVERTER_CLASS_NAME;
+    private static final String CONVERTER_CLASS_NAME;
     private static final String PROCESSOR_CLASS_NAME;
 
     static {
         EclipseiotSetting config = EclipseiotSetting.getInstance();
         VERTICLE_CLASS_NAME = config.getString(EclipseiotSettingKey.VERTICLE_CLASS_NAME);
-        TRANSPORT_CONVERTER_CLASS_NAME = config.getString(EclipseiotSettingKey.TRANSPORT_CONVERTER_CLASS_NAME);
-        APPLICATION_CONVERTER_CLASS_NAME = config.getString(EclipseiotSettingKey.APPLICATION_CONVERTER_CLASS_NAME);
+        CONVERTER_CLASS_NAME = config.getString(EclipseiotSettingKey.CONVERTER_CLASS_NAME);
         PROCESSOR_CLASS_NAME = config.getString(EclipseiotSettingKey.PROCESSOR_CLASS_NAME);
     }
 
-    private AbstractConnectorVerticle<?, ?, ?> connectorVerticle;
-    private Converter<?, ?> transportConverter;
-    private Converter<?, ?> applicationConverter;
+    private AbstractConnector<?, ?> connectorVerticle;
+    private Converter<?, ?> converter;
     private Processor<TransportMessage> processor;
 
     public static void main(String argv[]) throws KapuaException {
@@ -79,16 +80,14 @@ public class EclipseIot extends AbstractVerticle {
         java.util.logging.Logger.getLogger("io.vertx.core.impl.BlockedThreadChecker").setLevel(Level.OFF);
         XmlUtil.setContextProvider(new EclipseIotJAXBContextProvider());
         logger.info("Instantiating EclipseIot...");
-        logger.info("Instantiating EclipseIot... initializing transport converter");
-        transportConverter = ClassUtil.newInstance(TRANSPORT_CONVERTER_CLASS_NAME, Converter.class);
-        logger.info("Instantiating EclipseIot... initializing application converter");
-        applicationConverter = ClassUtil.newInstance(APPLICATION_CONVERTER_CLASS_NAME, Converter.class);
+        logger.info("Instantiating EclipseIot... initializing converter");
+        converter = ClassUtil.newInstance(CONVERTER_CLASS_NAME, Converter.class);
         logger.info("Instantiating EclipseIot... initializing processor");
         processor = ClassUtil.newInstance(PROCESSOR_CLASS_NAME, Processor.class);
         logger.info("Instantiating EclipseIot... instantiating verticle");
-        connectorVerticle = ClassUtil.newInstance(VERTICLE_CLASS_NAME, AbstractConnectorVerticle.class, 
-                new Class[] {Vertx.class, Converter.class, Converter.class, Processor.class}, 
-                new Object[]{vertx, transportConverter, applicationConverter, processor});
+        connectorVerticle = ClassUtil.newInstance(VERTICLE_CLASS_NAME, AbstractConnector.class,
+                new Class[] {Vertx.class, Converter.class, Processor.class},
+                new Object[]{vertx, converter, processor});
         connectorVerticle.start(future);
     }
 
