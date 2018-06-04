@@ -25,6 +25,8 @@ import org.eclipse.kapua.processor.Processor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.vertx.core.Vertx;
+
 /**
  * Abstract AMQP connector
  */
@@ -37,16 +39,16 @@ public abstract class AmqpAbstractConnector<P> extends AbstractConnector<byte[],
      * @param converter message converter instance
      * @param processor message processor instance
      */
-    protected AmqpAbstractConnector(Converter<byte[], P> converter, Processor<P> processor) {
-        super(converter, processor);
+    protected AmqpAbstractConnector(Vertx vertx, Converter<byte[], P> converter, Processor<P> processor) {
+        super(vertx, converter, processor);
     }
 
     /**
      * Constructor with no message converter
      * @param processor
      */
-    protected AmqpAbstractConnector(Processor<P> processor) {
-        this(null, processor);
+    protected AmqpAbstractConnector(Vertx vertx, Processor<P> processor) {
+        this(vertx, null, processor);
     }
 
     @Override

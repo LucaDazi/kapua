@@ -38,20 +38,23 @@ public abstract class AbstractConnector<M, P> {
 
     /**
      * Default protected constructor
+     * @param Vertx instance
      * @param converter message converter instance
      * @param processor message processor instance
      */
-    protected AbstractConnector(Converter<M, P> converter, Processor<P> processor) {
+    protected AbstractConnector(Vertx vertx, Converter<M, P> converter, Processor<P> processor) {
         this.converter = converter;
         this.processor = processor;
+        this.vertx = vertx;
     }
 
     /**
      * Constructor with no message converter
+     * @param Vertx instance
      * @param processor
      */
-    protected AbstractConnector(Processor<P> processor) {
-        this(null, processor);
+    protected AbstractConnector(Vertx vertx, Processor<P> processor) {
+        this(vertx, null, processor);
     }
 
     /**

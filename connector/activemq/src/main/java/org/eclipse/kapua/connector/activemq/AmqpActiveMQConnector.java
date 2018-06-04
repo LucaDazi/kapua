@@ -12,6 +12,7 @@
 package org.eclipse.kapua.connector.activemq;
 
 import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -56,8 +57,8 @@ public class AmqpActiveMQConnector extends AmqpAbstractConnector<TransportMessag
     private String brokerHost;
     private int brokerPort;
 
-    public AmqpActiveMQConnector(Converter<byte[], TransportMessage> converter, Processor<TransportMessage> processor) {
-        super(converter, processor);
+    public AmqpActiveMQConnector(Vertx vertx, Converter<byte[], TransportMessage> converter, Processor<TransportMessage> processor) {
+        super(vertx, converter, processor);
 
         brokerHost = ConnectorActiveMQSettings.getInstance().getString(ConnectorActiveMQSettingsKey.BROKER_HOST);
         brokerPort = ConnectorActiveMQSettings.getInstance().getInt(ConnectorActiveMQSettingsKey.BROKER_PORT);

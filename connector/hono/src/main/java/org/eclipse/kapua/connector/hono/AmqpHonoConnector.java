@@ -67,8 +67,7 @@ public class AmqpHonoConnector extends AmqpAbstractConnector<TransportMessage> {
     private HonoClient honoClient;
 
     public AmqpHonoConnector(Vertx vertx, Converter<byte[], TransportMessage> converter, Processor<TransportMessage> processor) {
-        super(converter, processor);
-        this.vertx = vertx;
+        super(vertx, converter, processor);
     }
 
     @Override
