@@ -97,9 +97,6 @@ public class EclipseIot extends AbstractVerticle {
         if (connectorVerticle!=null) {
             connectorVerticle.stop(future);
         }
-        if (processor!=null) {
-            processor.stop();
-        }
     }
 
 }

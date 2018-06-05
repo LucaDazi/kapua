@@ -11,9 +11,6 @@
  *******************************************************************************/
 package org.eclipse.kapua.connector.activemq;
 
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,13 +30,14 @@ import org.eclipse.kapua.processor.Processor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 import io.vertx.proton.ProtonClient;
 import io.vertx.proton.ProtonConnection;
 import io.vertx.proton.ProtonDelivery;
 
 /**
- * Amqp ActiveMQ connector implementation
+ * AMQP ActiveMQ connector implementation
  *
  */
 public class AmqpActiveMQConnector extends AmqpAbstractConnector<TransportMessage> {
@@ -65,33 +63,40 @@ public class AmqpActiveMQConnector extends AmqpAbstractConnector<TransportMessag
     }
 
     @Override
-    public void startInternal(Future<Void> startFuture) throws KapuaConnectorException {
-        // make sure connection is already closed
-        closeConnection();
-
+    public void startInternal(Future<Void> startFuture) {
         logger.info("Connecting to broker {}:{}...", brokerHost, brokerPort);
+        // make sure connection is already closed
+        if (connection != null && !connection.isDisconnected()) {
+            startFuture.fail("Unable to connect: still connected");
+            return;
+        }
+
         client = ProtonClient.create(vertx);
         client.connect(
                 brokerHost,
                 brokerPort,
                 ConnectorActiveMQSettings.getInstance().getString(ConnectorActiveMQSettingsKey.BROKER_USERNAME),
                 ConnectorActiveMQSettings.getInstance().getString(ConnectorActiveMQSettingsKey.BROKER_PASSWORD),
-                this::handleProtonConnection);
-
-        logger.info("Connecting to broker {}:{}... Done.", brokerHost, brokerPort);
-
+                ar ->{
+                    if (ar.succeeded()) {
+                        // register the message consumer
+                        registerConsumer(ar.result());
+                        logger.info("Connecting to broker {}:{}... Creating receiver... DONE", brokerHost, brokerPort);
+                        startFuture.complete();
+                    } else {
+                        logger.error("Cannot register ActiveMQ connection! ", ar.cause().getCause());
+                        startFuture.fail(ar.cause());
+                    }
+                });
     }
 
     @Override
-    public void stopInternal(Future<Void> stopFuture) throws KapuaConnectorException {
+    public void stopInternal(Future<Void> stopFuture) {
         logger.info("Closing broker connection...");
-        closeConnection();
-    }
-
-    private void closeConnection() {
         if (connection != null) {
             connection.close();
             connection = null;
+            stopFuture.complete();
         }
     }
 
@@ -101,27 +106,10 @@ public class AmqpActiveMQConnector extends AmqpAbstractConnector<TransportMessag
                 ConnectorActiveMQSettings.getInstance().getString(ConnectorActiveMQSettingsKey.BROKER_CLIENT_ID));
         logger.info("Register consumer for queue {}...", queue);
         connection.open();
-        this.connection = connection;
 
         // The client ID is set implicitly into the queue subscribed
         connection.createReceiver(queue).handler(this::handleInternalMessage).open();
         logger.info("Register consumer for queue {}... DONE", queue);
-    }
-
-    /**
-     * Callback for Connection Handler implementing interface Handler<AsyncResult<ProtonConnection>>
-     *
-     * @param event
-     */
-    public void handleProtonConnection(AsyncResult<ProtonConnection> event) {
-        if (event.succeeded()) {
-            // register the message consumer
-            logger.info("Connecting to broker {}:{}... Creating receiver...", brokerHost, brokerPort);
-            registerConsumer(event.result());
-            logger.info("Connecting to broker {}:{}... Creating receiver... DONE", brokerHost, brokerPort);
-        } else {
-            logger.error("Cannot register kafka consumer! ", event.cause().getCause());
-        }
     }
 
     /**

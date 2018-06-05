@@ -29,7 +29,6 @@ import org.eclipse.hono.util.TimeUntilDisconnectNotification;
 import org.eclipse.kapua.commons.setting.KapuaSettingException;
 import org.eclipse.kapua.commons.util.KapuaFileUtils;
 import org.eclipse.kapua.connector.AmqpAbstractConnector;
-import org.eclipse.kapua.connector.KapuaConnectorException;
 import org.eclipse.kapua.connector.MessageContext;
 import org.eclipse.kapua.connector.hono.settings.ConnectorHonoSetting;
 import org.eclipse.kapua.connector.hono.settings.ConnectorHonoSettingKey;
@@ -71,29 +70,62 @@ public class AmqpHonoConnector extends AmqpAbstractConnector<TransportMessage> {
     }
 
     @Override
-    protected void startInternal(Future<Void> startFuture) throws KapuaConnectorException {
+    protected void startInternal(Future<Void> startFuture) {
+        connectClient(startFuture);
+    }
+
+    @Override
+    protected void stopInternal(Future<Void> stopFuture) {
+        disconnectClient(stopFuture);
+    }
+
+    protected void connectionLost(Future<Void> connectFuture) {
+        logger.info("Hono client connection lost... Try to reconnect");
+        connectClient(connectFuture);
+    }
+
+    protected void connectClient(final Future<Void> connectFuture) {
+        if (honoClient != null) {
+            //try to disconnect the client
+            disconnectClient(null);
+        }
         honoClient = new HonoClientImpl(vertx, getClientConfigProperties());
         final Future<MessageConsumer> consumerFuture = Future.future();
         consumerFuture.setHandler(result -> {
             if (!result.succeeded()) {
-                logger.error("Hono client - cannot not create telemetry consumer for {}:{} - {}", host, port, result.cause());
+                logger.error("Hono client - cannot create telemetry consumer for {}:{} - {}", host, port, result.cause());
             }
         });
         //TODO handle subscription to multiple tenants ids
-        honoClient.connect(getProtonClientOptions()).compose(connectedClient -> {
+        honoClient.connect(
+                getProtonClientOptions(),
+                protonConnection -> connectionLost(null)
+                ).compose(connectedClient -> {
                 final Consumer<Message> telemetryHandler = MessageTap.getConsumer(
                         this::handleTelemetryMessage, this::handleCommandReadinessNotification);
                 Future<MessageConsumer> futureConsumer = connectedClient.createTelemetryConsumer(tenantId.get(0),
                         telemetryHandler, closeHook -> {
-                            logger.error("remotely detached consumer link");
-                            //TODO restore connection
+                            String errorMesssage = "remotely detached consumer link";
+                            logger.error(errorMesssage);
                             }
                         );
-                if (!startFuture.isComplete()) {
-                    startFuture.complete();
+                if (!connectFuture.isComplete()) {
+                    connectFuture.complete();
                 }
                 return futureConsumer;
         }).setHandler(consumerFuture.completer());
+    }
+
+    protected void disconnectClient(Future<Void> closeFuture) {
+        if(honoClient!=null) {
+            honoClient.shutdown(event -> {
+                logger.info("Closing connection {}", event);
+                if (!closeFuture.isComplete()) {
+                    closeFuture.complete();
+                }
+            }
+            );
+        }
     }
 
     private void handleTelemetryMessage(final Message message) {
@@ -130,7 +162,7 @@ public class AmqpHonoConnector extends AmqpAbstractConnector<TransportMessage> {
     private void handleCommandReadinessNotification(final TimeUntilDisconnectNotification notification) {
     }
 
-    private ClientConfigProperties getClientConfigProperties() {
+    protected ClientConfigProperties getClientConfigProperties() {
         ClientConfigProperties props = new ClientConfigProperties();
         props.setHost(host);
         props.setPort(port);
@@ -145,23 +177,12 @@ public class AmqpHonoConnector extends AmqpAbstractConnector<TransportMessage> {
         return props;
     }
 
-    public ProtonClientOptions getProtonClientOptions() {
+    protected ProtonClientOptions getProtonClientOptions() {
         ProtonClientOptions opts = new ProtonClientOptions();
         opts.setReconnectAttempts(5);
         opts.setReconnectInterval(5000);
         //TODO do we need to set some parameters?
         return opts;
-    }
-
-    @Override
-    protected void stopInternal(Future<Void> stopFuture) throws KapuaConnectorException {
-        honoClient.shutdown(event -> {
-            logger.info("Closing connection {}", event);
-            if (!stopFuture.isComplete()) {
-                stopFuture.complete();
-            }
-        }
-        );
     }
 
     @Override
