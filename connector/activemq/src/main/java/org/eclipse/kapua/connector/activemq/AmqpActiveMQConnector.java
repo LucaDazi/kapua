@@ -13,8 +13,11 @@ package org.eclipse.kapua.connector.activemq;
 
 import java.util.HashMap;
 import java.util.Map;
+//import java.util.function.Consumer;
 
 import org.apache.qpid.proton.message.Message;
+//import org.eclipse.hono.client.MessageConsumer;
+//import org.eclipse.hono.util.MessageTap;
 import org.eclipse.kapua.connector.AmqpAbstractConnector;
 import org.eclipse.kapua.connector.KapuaConnectorException;
 import org.eclipse.kapua.connector.MessageContext;
@@ -30,7 +33,9 @@ import org.eclipse.kapua.processor.Processor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.vertx.core.Context;
 import io.vertx.core.Future;
+//import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.proton.ProtonClient;
 import io.vertx.proton.ProtonConnection;
@@ -49,6 +54,7 @@ public class AmqpActiveMQConnector extends AmqpAbstractConnector<TransportMessag
     private final static int VIRTUAL_TOPIC_PREFIX_LENGTH = VIRTUAL_TOPIC_PREFIX.length();
     private final static String QUEUE_PATTERN = "queue://Consumer.%s.VirtualTopic.>";
 
+    private Context context;
     private ProtonClient client;
     private ProtonConnection connection;
 
@@ -60,14 +66,26 @@ public class AmqpActiveMQConnector extends AmqpAbstractConnector<TransportMessag
 
         brokerHost = ConnectorActiveMQSettings.getInstance().getString(ConnectorActiveMQSettingsKey.BROKER_HOST);
         brokerPort = ConnectorActiveMQSettings.getInstance().getInt(ConnectorActiveMQSettingsKey.BROKER_PORT);
+        Map<String, Object> configuration = new HashMap<>();
+        configuration.put(AmqpAbstractConnector.KEY_MAX_RECONNECTION_ATTEMPTS, ConnectorActiveMQSettings.getInstance().getInt(ConnectorActiveMQSettingsKey.MAX_RECONNECTION_ATTEMPTS));
+        configuration.put(AmqpAbstractConnector.KEY_EXIT_CODE, ConnectorActiveMQSettings.getInstance().getInt(ConnectorActiveMQSettingsKey.EXIT_CODE));
+        setConfiguration(configuration);
+
+        context = vertx.getOrCreateContext();
     }
 
     @Override
     public void startInternal(Future<Void> startFuture) {
+        connect(startFuture);
+    }
+
+    protected void connect(Future<Void> startFuture) {
         logger.info("Connecting to broker {}:{}...", brokerHost, brokerPort);
         // make sure connection is already closed
         if (connection != null && !connection.isDisconnected()) {
-            startFuture.fail("Unable to connect: still connected");
+            if (!startFuture.isComplete()) {
+                startFuture.fail("Unable to connect: still connected");
+            }
             return;
         }
 
@@ -77,21 +95,39 @@ public class AmqpActiveMQConnector extends AmqpAbstractConnector<TransportMessag
                 brokerPort,
                 ConnectorActiveMQSettings.getInstance().getString(ConnectorActiveMQSettingsKey.BROKER_USERNAME),
                 ConnectorActiveMQSettings.getInstance().getString(ConnectorActiveMQSettingsKey.BROKER_PASSWORD),
-                ar ->{
-                    if (ar.succeeded()) {
-                        // register the message consumer
-                        registerConsumer(ar.result());
+                asynchResult ->{
+                    if (asynchResult.succeeded()) {
                         logger.info("Connecting to broker {}:{}... Creating receiver... DONE", brokerHost, brokerPort);
-                        startFuture.complete();
+                        context.executeBlocking(future -> registerConsumer(asynchResult.result(), future), result -> {
+                            if (result.succeeded()) {
+                                logger.debug("Starting connector...DONE");
+                                startFuture.complete();
+                            } else {
+                                logger.warn("Starting connector...FAIL [message:{}]", asynchResult.cause().getMessage());
+                                if (!startFuture.isComplete()) {
+                                    startFuture.fail(asynchResult.cause());
+                                }
+                                notifyConnectionLost();
+                            }
+                        });
                     } else {
-                        logger.error("Cannot register ActiveMQ connection! ", ar.cause().getCause());
-                        startFuture.fail(ar.cause());
+                        logger.error("Cannot register ActiveMQ connection! ", asynchResult.cause().getCause());
+                        if (!startFuture.isComplete()) {
+                            startFuture.fail(asynchResult.cause());
+                        }
+                        notifyConnectionLost();
                     }
                 });
+
     }
 
     @Override
     public void stopInternal(Future<Void> stopFuture) {
+        disconnect(stopFuture);
+    }
+
+    @Override
+    protected void disconnect(Future<Void> stopFuture) {
         logger.info("Closing broker connection...");
         if (connection != null) {
             connection.close();
@@ -100,16 +136,21 @@ public class AmqpActiveMQConnector extends AmqpAbstractConnector<TransportMessag
         }
     }
 
-    private void registerConsumer(ProtonConnection connection) {
+    private void registerConsumer(ProtonConnection connection, Future<Object> future) {
+        try {
+            String queue = String.format(QUEUE_PATTERN,
+                    ConnectorActiveMQSettings.getInstance().getString(ConnectorActiveMQSettingsKey.BROKER_CLIENT_ID));
+            logger.info("Register consumer for queue {}...", queue);
+            connection.open();
 
-        String queue = String.format(QUEUE_PATTERN,
-                ConnectorActiveMQSettings.getInstance().getString(ConnectorActiveMQSettingsKey.BROKER_CLIENT_ID));
-        logger.info("Register consumer for queue {}...", queue);
-        connection.open();
-
-        // The client ID is set implicitly into the queue subscribed
-        connection.createReceiver(queue).handler(this::handleInternalMessage).open();
-        logger.info("Register consumer for queue {}... DONE", queue);
+            // The client ID is set implicitly into the queue subscribed
+            connection.createReceiver(queue).handler(this::handleInternalMessage).open();
+            logger.info("Register consumer for queue {}... DONE", queue);
+            future.complete();
+        }
+        catch(Exception e) {
+            future.fail(e);
+        }
     }
 
     /**

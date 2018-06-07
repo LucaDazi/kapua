@@ -39,8 +39,8 @@ public abstract class AbstractConnector<M, P> {
     /**
      * Default protected constructor
      * @param Vertx instance
-     * @param converter message converter instance
-     * @param processor message processor instance
+     * @param converter message instance
+     * @param processor processor instance
      */
     protected AbstractConnector(Vertx vertx, Converter<M, P> converter, Processor<P> processor) {
         this.converter = converter;
@@ -51,7 +51,7 @@ public abstract class AbstractConnector<M, P> {
     /**
      * Constructor with no message converter
      * @param Vertx instance
-     * @param processor
+     * @param processor processor instance
      */
     protected AbstractConnector(Vertx vertx, Processor<P> processor) {
         this(vertx, null, processor);
@@ -87,13 +87,13 @@ public abstract class AbstractConnector<M, P> {
             startInternal(internalFuture);
             return internalFuture;
         })
-        .setHandler(ar -> {
-            if (ar.succeeded()) {
+        .setHandler(result -> {
+            if (result.succeeded()) {
                 logger.debug("Starting connector...DONE");
                 startFuture.complete();
             } else {
-                logger.warn("Starting connector...FAIL [message:{}]", ar.cause().getMessage());
-                startFuture.fail(ar.cause());
+                logger.warn("Starting connector...FAIL [message:{}]", result.cause().getMessage());
+                startFuture.fail(result.cause());
             }
         });
         processor.start(composerFuture);
@@ -120,13 +120,13 @@ public abstract class AbstractConnector<M, P> {
             processor.stop(internalFuture);
             return internalFuture;
         })
-        .setHandler(ar -> {
-            if (ar.succeeded()) {
+        .setHandler(result -> {
+            if (result.succeeded()) {
                 logger.debug("Stopping connector...DONE");
                 stopFuture.complete();
             } else {
-                logger.warn("Stopping connector...FAIL [message:{}]", ar.cause().getMessage());
-                stopFuture.fail(ar.cause());
+                logger.warn("Stopping connector...FAIL [message:{}]", result.cause().getMessage());
+                stopFuture.fail(result.cause());
             }
         });
         stopInternal(composerFuture);
