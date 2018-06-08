@@ -102,16 +102,6 @@ public class AmqpHonoConnector extends AmqpAbstractConnector<TransportMessage> {
             disconnect(tmpFuture);
         }
         honoClient = new HonoClientImpl(vertx, getClientConfigProperties());
-        final Future<MessageConsumer> consumerFuture = Future.future();
-        consumerFuture.setHandler(result -> {
-            if (!result.succeeded()) {
-                logger.error("Hono client - cannot create telemetry consumer for {}:{} - {}", host, port, result.cause());
-                if (!connectFuture.isComplete()) {
-                    connectFuture.fail(result.cause());
-                }
-                notifyConnectionLost();
-            }
-        });
         //TODO handle subscription to multiple tenants ids
         honoClient.connect(
                 getProtonClientOptions(),
@@ -129,11 +119,19 @@ public class AmqpHonoConnector extends AmqpAbstractConnector<TransportMessage> {
                             notifyConnectionLost();
                             }
                         );
-                if (!connectFuture.isComplete()) {
-                    connectFuture.complete();
-                }
                 return futureConsumer;
-        }).setHandler(consumerFuture.completer());
+        }).setHandler(result -> {
+            if (!result.succeeded()) {
+                logger.error("Hono client - cannot create telemetry consumer for {}:{} - {}", host, port, result.cause());
+                if (!connectFuture.isComplete()) {
+                    connectFuture.fail(result.cause());
+                }
+                notifyConnectionLost();
+            }
+            else {
+                connectFuture.complete();
+            }
+        });
     }
 
     protected void disconnect(final Future<Void> closeFuture) {

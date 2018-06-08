@@ -13,7 +13,6 @@ package org.eclipse.kapua.eclipseiot;
 
 import java.util.logging.Level;
 
-import org.eclipse.kapua.KapuaException;
 import org.eclipse.kapua.commons.util.ClassUtil;
 import org.eclipse.kapua.commons.util.xml.XmlUtil;
 import org.eclipse.kapua.connector.AbstractConnector;
@@ -28,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
 
 /**
  * 
@@ -52,25 +50,6 @@ public class EclipseIot extends AbstractVerticle {
     private AbstractConnector<?, ?> connectorVerticle;
     private Converter<?, ?> converter;
     private Processor<TransportMessage> processor;
-
-    public static void main(String argv[]) throws KapuaException {
-        VertxOptions options = new VertxOptions();
-        options.setBlockedThreadCheckInterval(60 * 1000);
-        // TODO more options?
-        Vertx vertx = Vertx.vertx(options);
-        vertx.deployVerticle(new EclipseIot());
-
-//        logger.info("Waiting 30 seconds before stopping consumer");
-//        try {
-//            Thread.sleep(30000);
-//        } catch (InterruptedException e) {
-//            // TODO Auto-generated catch block
-//            e.printStackTrace();
-//        }
-//        logger.info("Stopping consumer");
-
-//        vertx.close();
-    }
 
     @SuppressWarnings("unchecked")
     @Override
