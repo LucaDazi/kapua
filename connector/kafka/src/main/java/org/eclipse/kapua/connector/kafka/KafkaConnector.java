@@ -15,10 +15,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.kapua.connector.AbstractConnector;
+import org.eclipse.kapua.connector.KapuaConnectorException;
 import org.eclipse.kapua.connector.MessageContext;
 import org.eclipse.kapua.converter.Converter;
 import org.eclipse.kapua.converter.KapuaConverterException;
 import org.eclipse.kapua.message.transport.TransportMessage;
+import org.eclipse.kapua.processor.KapuaProcessorException;
 import org.eclipse.kapua.processor.Processor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.kafka.client.consumer.KafkaConsumer;
+import io.vertx.kafka.client.consumer.KafkaConsumerRecord;
 
 /**
  * AMQP ActiveMQ connector implementation
@@ -41,7 +44,7 @@ public class KafkaConnector extends AbstractConnector<byte[], TransportMessage> 
 	private Converter<byte[], TransportMessage> converter;
 	private Processor<TransportMessage> processor;
 	
-	protected KafkaConnector(Vertx vertx, Converter<byte[], TransportMessage> converter,
+	public KafkaConnector(Vertx vertx, Converter<byte[], TransportMessage> converter,
 			Processor<TransportMessage> processor) {
 		super(vertx, converter, processor);
 		// TODO Auto-generated constructor stub
@@ -61,10 +64,22 @@ public class KafkaConnector extends AbstractConnector<byte[], TransportMessage> 
 		config.put("enable.auto.commit", "false");
 
 		// use consumer for interacting with Apache Kafka
+		logger.info("Creating consumer...");
 		consumer = KafkaConsumer.create(this.vertx, config);
+		logger.info("...done.");
 		consumer.handler(handler -> {
-			//Handle message?
+			logger.info("Received key: {}", handler.key());
+			logger.info("Received value: {}", handler.value());
+			
+			try {
+				handleMessage(new MessageContext<KafkaConsumerRecord>(handler));
+			} catch (KapuaConnectorException | KapuaConverterException | KapuaProcessorException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		});
+		consumer.subscribe("test");
+		logger.info("Subscribed to topic.");
 	}
 
 	@Override
@@ -78,10 +93,20 @@ public class KafkaConnector extends AbstractConnector<byte[], TransportMessage> 
 
 	@Override
 	protected MessageContext<byte[]> convert(MessageContext<?> message) throws KapuaConverterException {
-		// TODO Auto-generated method stub
-		return null;
+		KafkaConsumerRecord kcr = (KafkaConsumerRecord)message.getMessage();
+		return new MessageContext<byte[]>(extractPayload(kcr), extractParams(kcr));
+	}
+	
+	private byte[] extractPayload(KafkaConsumerRecord kcr) {
+		return kcr.value().toString().getBytes();
+	}
+	
+	private Map<String, Object> extractParams(KafkaConsumerRecord kcr){
+		Map<String, Object> props = new HashMap<>();
+		props.put("topic", kcr.topic());
+		props.put("partition", kcr.partition());
+		return props;
 	}
 
-   
 
 }

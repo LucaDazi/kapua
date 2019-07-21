@@ -27,6 +27,7 @@
     <modules>
         <module>api</module>
         <module>kura</module>
+        <module>kafka</module>
     </modules>
 
 </project>

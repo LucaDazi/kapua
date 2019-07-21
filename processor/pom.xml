@@ -28,6 +28,7 @@
         <module>api</module>
         <module>datastore</module>
         <module>logger</module>
+        <module>ksql</module>
     </modules>
 
 </project>
